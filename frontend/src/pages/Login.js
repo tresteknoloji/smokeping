@@ -8,12 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const Login = () => {
-  const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -24,23 +23,13 @@ const Login = () => {
       return;
     }
 
-    if (password.length < 4) {
-      toast.error("Password must be at least 4 characters");
-      return;
-    }
-
     setLoading(true);
     try {
-      if (isLogin) {
-        await login(username, password);
-        toast.success("Welcome back!");
-      } else {
-        await register(username, password);
-        toast.success("Account created successfully!");
-      }
+      await login(username, password);
+      toast.success("Welcome back!");
       navigate("/dashboard");
     } catch (error) {
-      const message = error.response?.data?.detail || "Authentication failed";
+      const message = error.response?.data?.detail || "Invalid credentials";
       toast.error(message);
     } finally {
       setLoading(false);
@@ -92,7 +81,7 @@ const Login = () => {
                 placeholder="Enter your password"
                 className="bg-slate-800/50 border-slate-700 focus:border-blue-500 pr-10"
                 data-testid="login-password"
-                autoComplete={isLogin ? "current-password" : "new-password"}
+                autoComplete="current-password"
               />
               <button
                 type="button"
@@ -113,25 +102,12 @@ const Login = () => {
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin" />
             ) : (
-              isLogin ? "Sign In" : "Create Account"
+              "Sign In"
             )}
           </Button>
         </form>
 
-        {/* Toggle */}
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm text-slate-400 hover:text-white transition-colors"
-            data-testid="toggle-auth-mode"
-          >
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span className="text-blue-400 font-medium">
-              {isLogin ? "Sign up" : "Sign in"}
-            </span>
-          </button>
-        </div>
+        {/* Toggle - Removed, no public registration */}
       </div>
     </div>
   );

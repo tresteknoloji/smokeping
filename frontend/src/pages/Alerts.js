@@ -71,7 +71,7 @@ const Alerts = () => {
       case "info":
         return "text-blue-400 bg-blue-500/10";
       default:
-        return "text-slate-400 bg-slate-500/10";
+        return "text-muted-foreground bg-slate-500/10";
     }
   };
 
@@ -111,12 +111,12 @@ const Alerts = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Alerts</h1>
-          <p className="text-slate-400 text-sm mt-1">Monitor and manage system alerts</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Alerts</h1>
+          <p className="text-muted-foreground text-sm mt-1">Monitor and manage system alerts</p>
         </div>
         <div className="flex gap-2">
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-[140px] bg-slate-800/50 border-slate-700" data-testid="alert-filter">
+            <SelectTrigger className="w-[140px] bg-secondary border-border" data-testid="alert-filter">
               <Filter className="w-4 h-4 mr-2" />
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
@@ -144,8 +144,8 @@ const Alerts = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400">Total</p>
-                <p className="text-2xl font-mono font-bold text-white">{stats.total}</p>
+                <p className="text-sm text-muted-foreground">Total</p>
+                <p className="text-2xl font-mono font-bold text-foreground">{stats.total}</p>
               </div>
               <AlertTriangle className="w-8 h-8 text-slate-600" />
             </div>
@@ -155,7 +155,7 @@ const Alerts = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400">Critical</p>
+                <p className="text-sm text-muted-foreground">Critical</p>
                 <p className="text-2xl font-mono font-bold text-red-400">{stats.critical}</p>
               </div>
               <div className="p-2 rounded-lg bg-red-500/10">
@@ -168,7 +168,7 @@ const Alerts = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400">Warning</p>
+                <p className="text-sm text-muted-foreground">Warning</p>
                 <p className="text-2xl font-mono font-bold text-yellow-400">{stats.warning}</p>
               </div>
               <div className="p-2 rounded-lg bg-yellow-500/10">
@@ -181,7 +181,7 @@ const Alerts = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-400">Resolved</p>
+                <p className="text-sm text-muted-foreground">Resolved</p>
                 <p className="text-2xl font-mono font-bold text-green-400">{stats.resolved}</p>
               </div>
               <div className="p-2 rounded-lg bg-green-500/10">
@@ -195,7 +195,7 @@ const Alerts = () => {
       {/* Alerts List */}
       <Card className="glass-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg font-semibold text-white">Alert History</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground">Alert History</CardTitle>
         </CardHeader>
         <CardContent>
           {alerts.length > 0 ? (
@@ -206,8 +206,8 @@ const Alerts = () => {
                     key={alert.id}
                     className={`p-4 rounded-lg border transition-all ${
                       alert.resolved 
-                        ? 'bg-slate-800/30 border-slate-700/50 opacity-60' 
-                        : 'bg-slate-800/50 border-slate-700'
+                        ? 'bg-secondary/50 border-border/50 opacity-60' 
+                        : 'bg-secondary border-border'
                     } ${!alert.resolved && alert.severity === 'critical' ? 'border-l-4 border-l-red-500' : ''}
                     ${!alert.resolved && alert.severity === 'warning' ? 'border-l-4 border-l-yellow-500' : ''}
                     ${!alert.resolved && alert.severity === 'info' ? 'border-l-4 border-l-blue-500' : ''}`}
@@ -237,8 +237,8 @@ const Alerts = () => {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-white font-medium">{alert.message}</p>
-                        <div className="flex flex-wrap gap-4 mt-2 text-sm text-slate-400">
+                        <p className="text-foreground font-medium">{alert.message}</p>
+                        <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
                           {alert.agent_name && (
                             <span className="flex items-center gap-1">
                               <Wifi className="w-3.5 h-3.5" />
@@ -275,7 +275,7 @@ const Alerts = () => {
               </div>
             </ScrollArea>
           ) : (
-            <div className="text-center py-12 text-slate-400">
+            <div className="text-center py-12 text-muted-foreground">
               <AlertTriangle className="w-12 h-12 mx-auto mb-3 opacity-50" />
               <p className="text-lg font-medium">No alerts found</p>
               <p className="text-sm mt-1">Your system is running smoothly</p>

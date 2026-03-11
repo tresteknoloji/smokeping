@@ -96,8 +96,8 @@ const SettingsPage = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Settings</h1>
-          <p className="text-slate-400 text-sm mt-1">Configure monitoring and notification settings</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Settings</h1>
+          <p className="text-muted-foreground text-sm mt-1">Configure monitoring and notification settings</p>
         </div>
         <Button
           onClick={handleSave}
@@ -117,11 +117,11 @@ const SettingsPage = () => {
       {/* Monitoring Settings */}
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <Clock className="w-5 h-5 text-blue-400" />
             Monitoring Settings
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-muted-foreground">
             Configure default monitoring parameters
           </CardDescription>
         </CardHeader>
@@ -134,10 +134,10 @@ const SettingsPage = () => {
                 type="number"
                 value={settings.ping_interval_seconds}
                 onChange={(e) => setSettings({ ...settings, ping_interval_seconds: parseInt(e.target.value) || 30 })}
-                className="bg-slate-800/50 border-slate-700 font-mono"
+                className="bg-secondary border-border font-mono"
                 data-testid="ping-interval-input"
               />
-              <p className="text-xs text-slate-500 mt-1">How often agents should ping targets</p>
+              <p className="text-xs text-muted-foreground mt-1">How often agents should ping targets</p>
             </div>
             <div className="form-group">
               <Label htmlFor="default_threshold" className="form-label">Default Latency Threshold (ms)</Label>
@@ -146,10 +146,10 @@ const SettingsPage = () => {
                 type="number"
                 value={settings.default_threshold_ms}
                 onChange={(e) => setSettings({ ...settings, default_threshold_ms: parseInt(e.target.value) || 100 })}
-                className="bg-slate-800/50 border-slate-700 font-mono"
+                className="bg-secondary border-border font-mono"
                 data-testid="threshold-input"
               />
-              <p className="text-xs text-slate-500 mt-1">Default threshold for new targets</p>
+              <p className="text-xs text-muted-foreground mt-1">Default threshold for new targets</p>
             </div>
           </div>
         </CardContent>
@@ -160,16 +160,16 @@ const SettingsPage = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2 text-white">
+              <CardTitle className="flex items-center gap-2 text-foreground">
                 <Mail className="w-5 h-5 text-cyan-400" />
                 Email Notifications (SMTP)
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-muted-foreground">
                 Configure email alerts for monitoring events
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Label htmlFor="smtp_enabled" className="text-sm text-slate-400">Enable</Label>
+              <Label htmlFor="smtp_enabled" className="text-sm text-muted-foreground">Enable</Label>
               <Switch
                 id="smtp_enabled"
                 checked={settings.smtp.enabled}
@@ -194,7 +194,7 @@ const SettingsPage = () => {
                   smtp: { ...settings.smtp, smtp_host: e.target.value }
                 })}
                 placeholder="smtp.gmail.com"
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="smtp-host-input"
               />
             </div>
@@ -209,7 +209,7 @@ const SettingsPage = () => {
                   smtp: { ...settings.smtp, smtp_port: parseInt(e.target.value) || 587 }
                 })}
                 placeholder="587"
-                className="bg-slate-800/50 border-slate-700 font-mono"
+                className="bg-secondary border-border font-mono"
                 data-testid="smtp-port-input"
               />
             </div>
@@ -223,7 +223,7 @@ const SettingsPage = () => {
                   smtp: { ...settings.smtp, smtp_user: e.target.value }
                 })}
                 placeholder="your-email@gmail.com"
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="smtp-user-input"
               />
             </div>
@@ -239,13 +239,13 @@ const SettingsPage = () => {
                     smtp: { ...settings.smtp, smtp_pass: e.target.value }
                   })}
                   placeholder="••••••••"
-                  className="bg-slate-800/50 border-slate-700 pr-10"
+                  className="bg-secondary border-border pr-10"
                   data-testid="smtp-pass-input"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -261,7 +261,7 @@ const SettingsPage = () => {
                   smtp: { ...settings.smtp, smtp_from: e.target.value }
                 })}
                 placeholder="noreply@yourdomain.com"
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="smtp-from-input"
               />
             </div>
@@ -278,7 +278,7 @@ const SettingsPage = () => {
                 onChange={(e) => setNewEmail(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && addEmail()}
                 placeholder="Add email address"
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="new-email-input"
               />
               <Button
@@ -310,7 +310,7 @@ const SettingsPage = () => {
                   </Badge>
                 ))
               ) : (
-                <p className="text-sm text-slate-500">No recipients added</p>
+                <p className="text-sm text-muted-foreground">No recipients added</p>
               )}
             </div>
           </div>
@@ -319,7 +319,7 @@ const SettingsPage = () => {
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-blue-400 mt-0.5" />
-              <div className="text-sm text-slate-300">
+              <div className="text-sm text-muted-foreground">
                 <p className="font-medium text-blue-400 mb-1">Gmail Users</p>
                 <p>For Gmail, use an App Password instead of your regular password. Enable 2FA and generate an app password from your Google Account settings.</p>
               </div>

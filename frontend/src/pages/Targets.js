@@ -137,8 +137,8 @@ const Targets = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Targets</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage hosts to monitor across all agents</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Targets</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage hosts to monitor across all agents</p>
         </div>
         <Button
           onClick={() => setShowAddDialog(true)}
@@ -157,12 +157,12 @@ const Targets = () => {
             <Table className="data-table">
               <TableHeader>
                 <TableRow className="border-b border-white/5 hover:bg-transparent">
-                  <TableHead className="text-slate-400">Status</TableHead>
-                  <TableHead className="text-slate-400">Name</TableHead>
-                  <TableHead className="text-slate-400">Hostname/IP</TableHead>
-                  <TableHead className="text-slate-400">Threshold</TableHead>
-                  <TableHead className="text-slate-400">Created</TableHead>
-                  <TableHead className="text-slate-400 text-right">Actions</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-muted-foreground">Name</TableHead>
+                  <TableHead className="text-muted-foreground">Hostname/IP</TableHead>
+                  <TableHead className="text-muted-foreground">Threshold</TableHead>
+                  <TableHead className="text-muted-foreground">Created</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -182,10 +182,10 @@ const Targets = () => {
                           onChange={(e) => setTargets(targets.map(t => 
                             t.id === target.id ? { ...t, name: e.target.value } : t
                           ))}
-                          className="bg-slate-800/50 border-slate-700 h-8 w-40"
+                          className="bg-secondary border-border h-8 w-40"
                         />
                       ) : (
-                        <span className="text-white font-medium">{target.name || target.hostname}</span>
+                        <span className="text-foreground font-medium">{target.name || target.hostname}</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -195,7 +195,7 @@ const Targets = () => {
                           onChange={(e) => setTargets(targets.map(t => 
                             t.id === target.id ? { ...t, hostname: e.target.value } : t
                           ))}
-                          className="bg-slate-800/50 border-slate-700 h-8 w-40 font-mono"
+                          className="bg-secondary border-border h-8 w-40 font-mono"
                         />
                       ) : (
                         <span className="font-mono text-cyan-400">{target.hostname}</span>
@@ -209,7 +209,7 @@ const Targets = () => {
                           onChange={(e) => setTargets(targets.map(t => 
                             t.id === target.id ? { ...t, threshold_ms: parseInt(e.target.value) || 0 } : t
                           ))}
-                          className="bg-slate-800/50 border-slate-700 h-8 w-24 font-mono"
+                          className="bg-secondary border-border h-8 w-24 font-mono"
                         />
                       ) : (
                         <Badge variant="outline" className="font-mono">
@@ -217,7 +217,7 @@ const Targets = () => {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-slate-400 text-sm">
+                    <TableCell className="text-muted-foreground text-sm">
                       {new Date(target.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
@@ -240,7 +240,7 @@ const Targets = () => {
                                 setEditingId(null);
                                 fetchTargets();
                               }}
-                              className="text-slate-400"
+                              className="text-muted-foreground"
                             >
                               <X className="w-4 h-4" />
                             </Button>
@@ -282,8 +282,8 @@ const Targets = () => {
           <CardContent className="p-12">
             <div className="text-center">
               <Globe className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Targets Yet</h3>
-              <p className="text-slate-400 mb-6 max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-foreground mb-2">No Targets Yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Add hosts to monitor. All connected agents will ping these targets.
               </p>
               <Button
@@ -300,10 +300,10 @@ const Targets = () => {
 
       {/* Add Target Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="bg-[#0f172a] border-slate-700">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white">Add New Target</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Add New Target</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Add a host to monitor. All agents will ping this target.
             </DialogDescription>
           </DialogHeader>
@@ -315,7 +315,7 @@ const Targets = () => {
                 value={formData.hostname}
                 onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
                 placeholder="e.g., 8.8.8.8 or google.com"
-                className="bg-slate-800/50 border-slate-700 font-mono"
+                className="bg-secondary border-border font-mono"
                 data-testid="target-hostname-input"
               />
             </div>
@@ -326,7 +326,7 @@ const Targets = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Google DNS"
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="target-name-input"
               />
             </div>
@@ -338,10 +338,10 @@ const Targets = () => {
                 value={formData.threshold_ms}
                 onChange={(e) => setFormData({ ...formData, threshold_ms: parseInt(e.target.value) || 0 })}
                 placeholder="100"
-                className="bg-slate-800/50 border-slate-700 font-mono"
+                className="bg-secondary border-border font-mono"
                 data-testid="target-threshold-input"
               />
-              <p className="text-xs text-slate-500 mt-1">Alert when latency exceeds this value</p>
+              <p className="text-xs text-muted-foreground mt-1">Alert when latency exceeds this value</p>
             </div>
           </div>
           <DialogFooter>
@@ -357,15 +357,15 @@ const Targets = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-[#0f172a] border-slate-700">
+        <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Target</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400">
+            <AlertDialogTitle className="text-foreground">Delete Target</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               Are you sure you want to delete "{selectedTarget?.name || selectedTarget?.hostname}"? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-800 border-slate-700 hover:bg-slate-700">
+            <AlertDialogCancel className="bg-slate-800 border-border hover:bg-slate-700">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

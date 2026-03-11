@@ -103,7 +103,7 @@ const InstantPing = () => {
   };
 
   const getLatencyColor = (latency) => {
-    if (latency === null) return "text-slate-400";
+    if (latency === null) return "text-muted-foreground";
     if (latency < 50) return "text-green-400";
     if (latency < 100) return "text-yellow-400";
     if (latency < 200) return "text-orange-400";
@@ -122,18 +122,18 @@ const InstantPing = () => {
     <div className="space-y-6" data-testid="instant-ping-page">
       {/* Header */}
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Instant Ping</h1>
-        <p className="text-slate-400 text-sm mt-1">Test connectivity from all agents to any host</p>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Instant Ping</h1>
+        <p className="text-muted-foreground text-sm mt-1">Test connectivity from all agents to any host</p>
       </div>
 
       {/* Ping Input */}
       <Card className="glass-card">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-white">
+          <CardTitle className="flex items-center gap-2 text-foreground">
             <Zap className="w-5 h-5 text-yellow-400" />
             Quick Ping Test
           </CardTitle>
-          <CardDescription className="text-slate-400">
+          <CardDescription className="text-muted-foreground">
             Enter a hostname or IP address to ping from all connected agents simultaneously
           </CardDescription>
         </CardHeader>
@@ -145,7 +145,7 @@ const InstantPing = () => {
                 onChange={(e) => setHostname(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && !loading && handlePing()}
                 placeholder="e.g., 8.8.8.8 or google.com"
-                className="bg-slate-800/50 border-slate-700 font-mono h-12 text-lg"
+                className="bg-secondary border-border font-mono h-12 text-lg"
                 disabled={loading}
                 data-testid="instant-ping-input"
               />
@@ -177,7 +177,7 @@ const InstantPing = () => {
         <Card className="glass-card">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
                 <Globe className="w-5 h-5 text-cyan-400" />
                 Results for <span className="font-mono text-cyan-400">{results[0]?.hostname}</span>
               </CardTitle>
@@ -199,10 +199,10 @@ const InstantPing = () => {
             <Table className="data-table">
               <TableHeader>
                 <TableRow className="border-b border-white/5 hover:bg-transparent">
-                  <TableHead className="text-slate-400">Agent</TableHead>
-                  <TableHead className="text-slate-400">Status</TableHead>
-                  <TableHead className="text-slate-400 text-right">Latency</TableHead>
-                  <TableHead className="text-slate-400 text-right">Packet Loss</TableHead>
+                  <TableHead className="text-muted-foreground">Agent</TableHead>
+                  <TableHead className="text-muted-foreground">Status</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Latency</TableHead>
+                  <TableHead className="text-muted-foreground text-right">Packet Loss</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -214,15 +214,15 @@ const InstantPing = () => {
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Server className="w-4 h-4 text-slate-400" />
-                        <span className="text-white font-medium">{result.agent_name}</span>
+                        <Server className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-foreground font-medium">{result.agent_name}</span>
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(result)}</TableCell>
                     <TableCell className="text-right">
                       <span className={`font-mono text-lg font-bold ${getLatencyColor(result.latency_ms)}`}>
                         {result.latency_ms !== null ? `${result.latency_ms.toFixed(1)}` : '--'}
-                        <span className="text-sm text-slate-500 ml-1">ms</span>
+                        <span className="text-sm text-muted-foreground ml-1">ms</span>
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
@@ -239,29 +239,29 @@ const InstantPing = () => {
             {completed && (
               <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap gap-6">
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Avg Latency</p>
-                  <p className="text-2xl font-mono font-bold text-white">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Avg Latency</p>
+                  <p className="text-2xl font-mono font-bold text-foreground">
                     {(results.filter(r => r.latency_ms !== null).reduce((sum, r) => sum + r.latency_ms, 0) / 
                       results.filter(r => r.latency_ms !== null).length || 0).toFixed(1)}
-                    <span className="text-sm text-slate-400 ml-1">ms</span>
+                    <span className="text-sm text-muted-foreground ml-1">ms</span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Min Latency</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Min Latency</p>
                   <p className="text-2xl font-mono font-bold text-green-400">
                     {Math.min(...results.filter(r => r.latency_ms !== null).map(r => r.latency_ms)).toFixed(1) || '--'}
-                    <span className="text-sm text-slate-400 ml-1">ms</span>
+                    <span className="text-sm text-muted-foreground ml-1">ms</span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Max Latency</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Max Latency</p>
                   <p className="text-2xl font-mono font-bold text-red-400">
                     {Math.max(...results.filter(r => r.latency_ms !== null).map(r => r.latency_ms)).toFixed(1) || '--'}
-                    <span className="text-sm text-slate-400 ml-1">ms</span>
+                    <span className="text-sm text-muted-foreground ml-1">ms</span>
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Success Rate</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Success Rate</p>
                   <p className="text-2xl font-mono font-bold text-cyan-400">
                     {((results.filter(r => r.status === 'success').length / results.length) * 100).toFixed(0)}%
                   </p>
@@ -276,8 +276,8 @@ const InstantPing = () => {
       {history.length > 0 && (
         <Card className="glass-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2">
-              <Clock className="w-5 h-5 text-slate-400" />
+            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Clock className="w-5 h-5 text-muted-foreground" />
               Recent Tests
             </CardTitle>
           </CardHeader>
@@ -286,7 +286,7 @@ const InstantPing = () => {
               {history.map((item, index) => (
                 <div 
                   key={index}
-                  className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg hover:bg-slate-800/50 transition-colors cursor-pointer"
+                  className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors cursor-pointer"
                   onClick={() => {
                     setHostname(item.hostname);
                     setResults(item.results);
@@ -296,10 +296,10 @@ const InstantPing = () => {
                   <div className="flex items-center gap-4">
                     <Globe className="w-4 h-4 text-cyan-400" />
                     <span className="font-mono text-cyan-400">{item.hostname}</span>
-                    <span className="text-slate-500 text-sm">{item.timestamp}</span>
+                    <span className="text-muted-foreground text-sm">{item.timestamp}</span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm text-slate-400">
+                    <span className="text-sm text-muted-foreground">
                       {item.results.length} agents
                     </span>
                     <Badge variant="outline" className="font-mono">
@@ -319,8 +319,8 @@ const InstantPing = () => {
           <CardContent className="p-12">
             <div className="text-center">
               <Zap className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-              <h3 className="text-xl font-semibold text-white mb-2">Ready to Test</h3>
-              <p className="text-slate-400 max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-foreground mb-2">Ready to Test</h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
                 Enter any hostname or IP address above to instantly test connectivity from all your monitoring agents.
               </p>
               <div className="flex flex-wrap justify-center gap-2 mt-6">

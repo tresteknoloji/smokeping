@@ -147,8 +147,8 @@ const Agents = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Agents</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage monitoring agents across your infrastructure</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Agents</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage monitoring agents across your infrastructure</p>
         </div>
         <Button
           onClick={() => setShowAddDialog(true)}
@@ -172,12 +172,12 @@ const Agents = () => {
                       {agent.status === 'online' ? (
                         <Wifi className="w-5 h-5 text-green-400" />
                       ) : (
-                        <WifiOff className="w-5 h-5 text-slate-400" />
+                        <WifiOff className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white">{agent.name}</h3>
-                      <p className="text-xs text-slate-400 font-mono">{agent.ip_address || 'Not connected'}</p>
+                      <h3 className="font-semibold text-foreground">{agent.name}</h3>
+                      <p className="text-xs text-muted-foreground font-mono">{agent.ip_address || 'Not connected'}</p>
                     </div>
                   </div>
                   <Badge 
@@ -189,10 +189,10 @@ const Agents = () => {
                 </div>
 
                 {agent.description && (
-                  <p className="text-sm text-slate-400 mb-4">{agent.description}</p>
+                  <p className="text-sm text-muted-foreground mb-4">{agent.description}</p>
                 )}
 
-                <div className="flex items-center gap-2 text-xs text-slate-500 mb-4">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                   <Clock className="w-3.5 h-3.5" />
                   {agent.last_seen ? (
                     <span>Last seen: {new Date(agent.last_seen).toLocaleString()}</span>
@@ -237,8 +237,8 @@ const Agents = () => {
           <CardContent className="p-12">
             <div className="text-center">
               <Server className="w-16 h-16 mx-auto mb-4 text-slate-600" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Agents Yet</h3>
-              <p className="text-slate-400 mb-6 max-w-md mx-auto">
+              <h3 className="text-xl font-semibold text-foreground mb-2">No Agents Yet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Add your first monitoring agent to start collecting network metrics from your servers.
               </p>
               <Button
@@ -255,10 +255,10 @@ const Agents = () => {
 
       {/* Add Agent Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="bg-[#0f172a] border-slate-700">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
-            <DialogTitle className="text-white">Add New Agent</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Add New Agent</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Create a new monitoring agent. You'll receive a script to run on your server.
             </DialogDescription>
           </DialogHeader>
@@ -270,7 +270,7 @@ const Agents = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., Production Server 1"
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="agent-name-input"
               />
             </div>
@@ -281,7 +281,7 @@ const Agents = () => {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="e.g., Located in US-East datacenter"
-                className="bg-slate-800/50 border-slate-700"
+                className="bg-secondary border-border"
                 data-testid="agent-description-input"
               />
             </div>
@@ -299,17 +299,17 @@ const Agents = () => {
 
       {/* Script Dialog */}
       <Dialog open={showScriptDialog} onOpenChange={setShowScriptDialog}>
-        <DialogContent className="bg-[#0f172a] border-slate-700 max-w-3xl max-h-[80vh]">
+        <DialogContent className="bg-card border-border max-w-3xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle className="text-white">Agent Script - {selectedAgent?.name}</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogTitle className="text-foreground">Agent Script - {selectedAgent?.name}</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
               Run this script on your Ubuntu server to start collecting metrics.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="bg-slate-900 rounded-lg border border-slate-700">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-slate-700">
-                <span className="text-sm text-slate-400 font-mono">smokeping_agent.py</span>
+            <div className="bg-slate-900 rounded-lg border border-border">
+              <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground font-mono">smokeping_agent.py</span>
                 <div className="flex gap-2">
                   <Button
                     variant="ghost"
@@ -334,7 +334,7 @@ const Agents = () => {
                 </div>
               </div>
               <ScrollArea className="h-[400px]">
-                <pre className="p-4 text-sm font-mono text-slate-300 whitespace-pre-wrap">
+                <pre className="p-4 text-sm font-mono text-muted-foreground whitespace-pre-wrap">
                   {agentScript}
                 </pre>
               </ScrollArea>
@@ -342,7 +342,7 @@ const Agents = () => {
             
             <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
               <h4 className="font-medium text-blue-400 mb-2">Installation Instructions</h4>
-              <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
                 <li>Install dependencies: <code className="bg-slate-800 px-1.5 py-0.5 rounded">pip install websockets</code></li>
                 <li>Save the script to your server</li>
                 <li>Install mtr: <code className="bg-slate-800 px-1.5 py-0.5 rounded">sudo apt install mtr-tiny</code></li>
@@ -361,15 +361,15 @@ const Agents = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent className="bg-[#0f172a] border-slate-700">
+        <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Agent</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400">
+            <AlertDialogTitle className="text-foreground">Delete Agent</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
               Are you sure you want to delete "{selectedAgent?.name}"? This will also delete all associated metrics and cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-slate-800 border-slate-700 hover:bg-slate-700">
+            <AlertDialogCancel className="bg-slate-800 border-border hover:bg-slate-700">
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction

@@ -164,8 +164,8 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Dashboard</h1>
-          <p className="text-slate-400 text-sm mt-1">Real-time network monitoring overview</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm mt-1">Real-time network monitoring overview</p>
         </div>
         <Button
           onClick={fetchData}
@@ -184,11 +184,11 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-400">Agents</p>
-                <p className="text-3xl font-mono font-bold text-white mt-1">
+                <p className="text-sm text-muted-foreground">Agents</p>
+                <p className="text-3xl font-mono font-bold mt-1">
                   {stats.online_agents}/{stats.total_agents}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">online / total</p>
+                <p className="text-xs text-muted-foreground mt-1">online / total</p>
               </div>
               <div className="p-3 rounded-lg bg-blue-500/10">
                 <Server className="w-6 h-6 text-blue-400" />
@@ -201,9 +201,9 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-400">Targets</p>
-                <p className="text-3xl font-mono font-bold text-white mt-1">{stats.total_targets}</p>
-                <p className="text-xs text-slate-500 mt-1">monitored hosts</p>
+                <p className="text-sm text-muted-foreground">Targets</p>
+                <p className="text-3xl font-mono font-bold mt-1">{stats.total_targets}</p>
+                <p className="text-xs text-muted-foreground mt-1">monitored hosts</p>
               </div>
               <div className="p-3 rounded-lg bg-cyan-500/10">
                 <Globe className="w-6 h-6 text-cyan-400" />
@@ -216,11 +216,11 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-400">Active Alerts</p>
+                <p className="text-sm text-muted-foreground">Active Alerts</p>
                 <p className={`text-3xl font-mono font-bold mt-1 ${stats.active_alerts > 0 ? 'text-red-400' : 'text-green-400'}`}>
                   {stats.active_alerts}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">unresolved</p>
+                <p className="text-xs text-muted-foreground mt-1">unresolved</p>
               </div>
               <div className={`p-3 rounded-lg ${stats.active_alerts > 0 ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
                 <AlertTriangle className={`w-6 h-6 ${stats.active_alerts > 0 ? 'text-red-400' : 'text-green-400'}`} />
@@ -233,15 +233,15 @@ const Dashboard = () => {
           <CardContent className="p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-slate-400">Avg Latency</p>
-                <p className="text-3xl font-mono font-bold text-white mt-1">
+                <p className="text-sm text-muted-foreground">Avg Latency</p>
+                <p className="text-3xl font-mono font-bold mt-1">
                   {pingResults.length > 0 && pingResults.some(r => r.latency_ms)
                     ? Math.round(pingResults.filter(r => r.latency_ms).reduce((a, b) => a + b.latency_ms, 0) / pingResults.filter(r => r.latency_ms).length)
                     : '--'
                   }
-                  <span className="text-lg text-slate-400">ms</span>
+                  <span className="text-lg text-muted-foreground">ms</span>
                 </p>
-                <p className="text-xs text-slate-500 mt-1">last 24h</p>
+                <p className="text-xs text-muted-foreground mt-1">last 24h</p>
               </div>
               <div className="p-3 rounded-lg bg-green-500/10">
                 <TrendingUp className="w-6 h-6 text-green-400" />
@@ -255,10 +255,10 @@ const Dashboard = () => {
       <Card className="glass-card" data-testid="latency-chart">
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-lg font-semibold text-white">Latency Overview</CardTitle>
+            <CardTitle className="text-lg font-semibold">Latency Overview</CardTitle>
             <div className="flex gap-2">
               <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                <SelectTrigger className="w-[150px] bg-slate-800/50 border-slate-700" data-testid="agent-filter">
+                <SelectTrigger className="w-[150px]" data-testid="agent-filter">
                   <SelectValue placeholder="All Agents" />
                 </SelectTrigger>
                 <SelectContent>
@@ -269,7 +269,7 @@ const Dashboard = () => {
                 </SelectContent>
               </Select>
               <Select value={selectedTarget} onValueChange={setSelectedTarget}>
-                <SelectTrigger className="w-[150px] bg-slate-800/50 border-slate-700" data-testid="target-filter">
+                <SelectTrigger className="w-[150px]" data-testid="target-filter">
                   <SelectValue placeholder="All Targets" />
                 </SelectTrigger>
                 <SelectContent>
@@ -322,7 +322,7 @@ const Dashboard = () => {
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center">
-                <div className="text-center text-slate-400">
+                <div className="text-center text-muted-foreground">
                   <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
                   <p>No data available</p>
                   <p className="text-sm mt-1">Connect agents to start collecting metrics</p>
@@ -339,7 +339,7 @@ const Dashboard = () => {
         <Card className="glass-card" data-testid="agents-status">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-white">Agents Status</CardTitle>
+              <CardTitle className="text-lg font-semibold">Agents Status</CardTitle>
               <a href="/agents" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1">
                 View all <ChevronRight className="w-4 h-4" />
               </a>
@@ -349,12 +349,12 @@ const Dashboard = () => {
             <div className="space-y-3">
               {agents.length > 0 ? (
                 agents.slice(0, 5).map(agent => (
-                  <div key={agent.id} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+                  <div key={agent.id} className="flex items-center justify-between p-3 bg-[hsl(var(--secondary))] rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className={`status-dot ${agent.status === 'online' ? 'online' : 'offline'}`} />
                       <div>
-                        <p className="text-sm font-medium text-white">{agent.name}</p>
-                        <p className="text-xs text-slate-400 font-mono">{agent.ip_address || 'No IP'}</p>
+                        <p className="text-sm font-medium">{agent.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{agent.ip_address || 'No IP'}</p>
                       </div>
                     </div>
                     <Badge 
@@ -366,7 +366,7 @@ const Dashboard = () => {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-400">
+                <div className="text-center py-8 text-muted-foreground">
                   <Server className="w-10 h-10 mx-auto mb-2 opacity-50" />
                   <p>No agents configured</p>
                 </div>
@@ -379,7 +379,7 @@ const Dashboard = () => {
         <Card className="glass-card" data-testid="recent-alerts">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-white">Recent Alerts</CardTitle>
+              <CardTitle className="text-lg font-semibold">Recent Alerts</CardTitle>
               <a href="/alerts" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1">
                 View all <ChevronRight className="w-4 h-4" />
               </a>
@@ -395,8 +395,8 @@ const Dashboard = () => {
                       alert.severity === 'warning' ? 'text-yellow-400' : 'text-blue-400'
                     }`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white truncate">{alert.message}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-sm truncate">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {alert.agent_name && `${alert.agent_name} • `}
                         {new Date(alert.created_at).toLocaleTimeString()}
                       </p>
@@ -404,7 +404,7 @@ const Dashboard = () => {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-slate-400">
+                <div className="text-center py-8 text-muted-foreground">
                   <AlertTriangle className="w-10 h-10 mx-auto mb-2 opacity-50" />
                   <p>No recent alerts</p>
                 </div>

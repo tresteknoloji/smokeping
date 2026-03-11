@@ -120,28 +120,28 @@ const PublicStatus = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="spinner"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#020617]" data-testid="public-status-page">
+    <div className="min-h-screen bg-background" data-testid="public-status-page">
       {/* Header */}
       <header className="public-header">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-              <Activity className="w-6 h-6 text-white" />
+              <Activity className="w-6 h-6 text-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-white tracking-tight">Network Status</h1>
-              <p className="text-xs text-slate-400">Public Monitoring Dashboard</p>
+              <h1 className="font-bold text-lg text-foreground tracking-tight">Network Status</h1>
+              <p className="text-xs text-muted-foreground">Public Monitoring Dashboard</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-sm text-slate-400 flex items-center gap-2">
+            <div className="text-sm text-muted-foreground flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Updated: {lastUpdate.toLocaleTimeString()}
             </div>
@@ -167,8 +167,8 @@ const PublicStatus = () => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Agents Online</p>
-                  <p className="text-3xl font-mono font-bold text-white mt-1">
+                  <p className="text-sm text-muted-foreground">Agents Online</p>
+                  <p className="text-3xl font-mono font-bold text-foreground mt-1">
                     {onlineAgents}/{data.agents.length}
                   </p>
                 </div>
@@ -183,8 +183,8 @@ const PublicStatus = () => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Targets</p>
-                  <p className="text-3xl font-mono font-bold text-white mt-1">{data.targets.length}</p>
+                  <p className="text-sm text-muted-foreground">Targets</p>
+                  <p className="text-3xl font-mono font-bold text-foreground mt-1">{data.targets.length}</p>
                 </div>
                 <div className="p-3 rounded-lg bg-cyan-500/10">
                   <Globe className="w-6 h-6 text-cyan-400" />
@@ -197,7 +197,7 @@ const PublicStatus = () => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Active Alerts</p>
+                  <p className="text-sm text-muted-foreground">Active Alerts</p>
                   <p className={`text-3xl font-mono font-bold mt-1 ${alerts.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
                     {alerts.length}
                   </p>
@@ -213,10 +213,10 @@ const PublicStatus = () => {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Avg Latency</p>
-                  <p className="text-3xl font-mono font-bold text-white mt-1">
+                  <p className="text-sm text-muted-foreground">Avg Latency</p>
+                  <p className="text-3xl font-mono font-bold text-foreground mt-1">
                     {avgLatency || '--'}
-                    <span className="text-lg text-slate-400">ms</span>
+                    <span className="text-lg text-muted-foreground">ms</span>
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-green-500/10">
@@ -231,10 +231,10 @@ const PublicStatus = () => {
         <Card className="glass-card">
           <CardHeader className="pb-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <CardTitle className="text-lg font-semibold text-white">Latency (Last 24 Hours)</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Latency (Last 24 Hours)</CardTitle>
               <div className="flex gap-2">
                 <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                  <SelectTrigger className="w-[150px] bg-slate-800/50 border-slate-700">
+                  <SelectTrigger className="w-[150px] bg-secondary border-border">
                     <SelectValue placeholder="All Agents" />
                   </SelectTrigger>
                   <SelectContent>
@@ -245,7 +245,7 @@ const PublicStatus = () => {
                   </SelectContent>
                 </Select>
                 <Select value={selectedTarget} onValueChange={setSelectedTarget}>
-                  <SelectTrigger className="w-[150px] bg-slate-800/50 border-slate-700">
+                  <SelectTrigger className="w-[150px] bg-secondary border-border">
                     <SelectValue placeholder="All Targets" />
                   </SelectTrigger>
                   <SelectContent>
@@ -298,7 +298,7 @@ const PublicStatus = () => {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-full flex items-center justify-center">
-                  <div className="text-center text-slate-400">
+                  <div className="text-center text-muted-foreground">
                     <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
                     <p>No data available</p>
                   </div>
@@ -313,18 +313,18 @@ const PublicStatus = () => {
           {/* Agents */}
           <Card className="glass-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-white">Monitoring Agents</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Monitoring Agents</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {data.agents.length > 0 ? (
                   data.agents.map(agent => (
-                    <div key={agent.id} className="flex items-center justify-between p-3 bg-slate-800/30 rounded-lg">
+                    <div key={agent.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                       <div className="flex items-center gap-3">
                         <div className={`status-dot ${agent.status === 'online' ? 'online' : 'offline'}`} />
                         <div>
-                          <p className="text-sm font-medium text-white">{agent.name}</p>
-                          <p className="text-xs text-slate-400">{agent.description || 'No description'}</p>
+                          <p className="text-sm font-medium text-foreground">{agent.name}</p>
+                          <p className="text-xs text-muted-foreground">{agent.description || 'No description'}</p>
                         </div>
                       </div>
                       <Badge 
@@ -336,7 +336,7 @@ const PublicStatus = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-slate-400">
+                  <div className="text-center py-8 text-muted-foreground">
                     <Server className="w-10 h-10 mx-auto mb-2 opacity-50" />
                     <p>No agents configured</p>
                   </div>
@@ -348,7 +348,7 @@ const PublicStatus = () => {
           {/* Active Alerts */}
           <Card className="glass-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-white">Active Alerts</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Active Alerts</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -360,8 +360,8 @@ const PublicStatus = () => {
                         alert.severity === 'warning' ? 'text-yellow-400' : 'text-blue-400'
                       }`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-white truncate">{alert.message}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-sm text-foreground truncate">{alert.message}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {alert.agent_name && `${alert.agent_name} • `}
                           {new Date(alert.created_at).toLocaleTimeString()}
                         </p>
@@ -369,7 +369,7 @@ const PublicStatus = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-slate-400">
+                  <div className="text-center py-8 text-muted-foreground">
                     <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
                       <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
                       All Systems Operational
@@ -385,7 +385,7 @@ const PublicStatus = () => {
 
       {/* Footer */}
       <footer className="max-w-7xl mx-auto p-4 md:p-8 border-t border-white/5">
-        <div className="text-center text-sm text-slate-500">
+        <div className="text-center text-sm text-muted-foreground">
           <p>SmokePing Modern • Real-time Network Monitoring</p>
         </div>
       </footer>
