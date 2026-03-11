@@ -379,16 +379,17 @@ async def run_agent():
     while True:
         try:
             uri = f"{{WS_URL}}?agent_id={{AGENT_ID}}&api_key={{API_KEY}}"
-            async with websockets.connect(uri) as websocket:
+            async with websockets.connect(uri, ping_interval=20, ping_timeout=20) as websocket:
                 print(f"[{{datetime.now()}}] Connected to server")
                 
                 while True:
                     try:
-                        message = await asyncio.wait_for(websocket.recv(), timeout=5)
+                        message = await asyncio.wait_for(websocket.recv(), timeout=60)
                         data = json.loads(message)
                         
                         if data.get("type") == "ping_targets":
                             targets = data.get("targets", [])
+                            print(f"[{{datetime.now()}}] Pinging {{len(targets)}} targets...")
                             
                             # Run all pings concurrently
                             async def do_ping(target):
@@ -406,6 +407,8 @@ async def run_agent():
                                     "target_hostname": target["hostname"],
                                     **ping_result
                                 }}))
+                            
+                            print(f"[{{datetime.now()}}] Sent {{len(results)}} results")
                             
                             # MTR sequentially if needed
                             if data.get("include_mtr", False):
@@ -431,11 +434,11 @@ async def run_agent():
                     except asyncio.TimeoutError:
                         await websocket.send(json.dumps({{"type": "heartbeat"}}))
                     except websockets.exceptions.ConnectionClosed:
-                        print(f"[{{datetime.now()}}] Connection closed, reconnecting...")
+                        print(f"[{{datetime.now()}}] Connection closed")
                         break
         except Exception as e:
-            print(f"[{{datetime.now()}}] Error: {{e}}, reconnecting in 10s...")
-            await asyncio.sleep(10)
+            print(f"[{{datetime.now()}}] Error: {{e}}, reconnecting in 5s...")
+            await asyncio.sleep(5)
 
 if __name__ == "__main__":
     print("NetPing Agent Starting...")
@@ -534,14 +537,15 @@ async def run_agent():
     while True:
         try:
             uri = f"{{WS_URL}}?agent_id={{AGENT_ID}}&api_key={{API_KEY}}"
-            async with websockets.connect(uri) as ws:
+            async with websockets.connect(uri, ping_interval=20, ping_timeout=20) as ws:
                 print(f"[{{datetime.now()}}] Connected to server")
                 while True:
                     try:
-                        msg = await asyncio.wait_for(ws.recv(), timeout=5)
+                        msg = await asyncio.wait_for(ws.recv(), timeout=60)
                         data = json.loads(msg)
                         if data.get("type") == "ping_targets":
                             targets = data.get("targets", [])
+                            print(f"[{{datetime.now()}}] Pinging {{len(targets)}} targets...")
                             # Run all pings concurrently
                             async def do_ping(t):
                                 r = await ping_host(t["hostname"])
@@ -551,6 +555,7 @@ async def run_agent():
                             for item in results:
                                 t, r = item["target"], item["result"]
                                 await ws.send(json.dumps({{"type": "ping_result", "target_id": t["id"], "target_hostname": t["hostname"], **r}}))
+                            print(f"[{{datetime.now()}}] Sent {{len(results)}} results")
                             # MTR sequentially if needed
                             if data.get("include_mtr"):
                                 for t in targets:
@@ -560,12 +565,14 @@ async def run_agent():
                             r = await ping_host(data["hostname"])
                             await ws.send(json.dumps({{"type": "instant_ping_result", "request_id": data["request_id"], "hostname": data["hostname"], **r}}))
                     except asyncio.TimeoutError:
+                        # No message received, send heartbeat
                         await ws.send(json.dumps({{"type": "heartbeat"}}))
                     except websockets.exceptions.ConnectionClosed:
+                        print(f"[{{datetime.now()}}] Connection closed")
                         break
         except Exception as e:
-            print(f"[{{datetime.now()}}] Error: {{e}}, reconnecting...")
-            await asyncio.sleep(10)
+            print(f"[{{datetime.now()}}] Error: {{e}}, reconnecting in 5s...")
+            await asyncio.sleep(5)
 
 if __name__ == "__main__":
     print("NetPing Agent Starting...")
