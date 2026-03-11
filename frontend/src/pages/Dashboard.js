@@ -243,23 +243,35 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   {/* Chart */}
-                  <div className="h-[180px] mb-4">
+                  <div className="h-[200px] mb-4">
                     {chartData.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData}>
+                        <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                           <defs>
                             <linearGradient id={`gradient-${agent.id}-${target.id}`} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                              <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4}/>
+                              <stop offset="50%" stopColor="#22c55e" stopOpacity={0.15}/>
+                              <stop offset="100%" stopColor="#22c55e" stopOpacity={0}/>
+                            </linearGradient>
+                            <linearGradient id={`line-gradient-${agent.id}-${target.id}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#4ade80"/>
+                              <stop offset="100%" stopColor="#22c55e"/>
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                          <CartesianGrid 
+                            strokeDasharray="1 3" 
+                            stroke="hsl(var(--border))" 
+                            strokeOpacity={0.3}
+                            vertical={false}
+                          />
                           <XAxis 
                             dataKey="time" 
                             stroke="hsl(var(--muted-foreground))" 
                             fontSize={10}
                             tickLine={false}
                             axisLine={false}
+                            interval="preserveStartEnd"
+                            minTickGap={30}
                           />
                           <YAxis 
                             stroke="hsl(var(--muted-foreground))" 
@@ -267,25 +279,29 @@ const Dashboard = () => {
                             tickLine={false}
                             axisLine={false}
                             tickFormatter={(v) => `${v}`}
-                            width={35}
+                            width={40}
+                            domain={['dataMin - 1', 'dataMax + 1']}
                           />
                           <Tooltip content={<CustomTooltip />} />
-                          {stats.p95 && (
+                          {stats.avg && (
                             <ReferenceLine 
-                              y={stats.p95} 
-                              stroke="#f59e0b" 
-                              strokeDasharray="3 3" 
-                              strokeOpacity={0.7}
+                              y={stats.avg} 
+                              stroke="#3b82f6" 
+                              strokeDasharray="4 4" 
+                              strokeOpacity={0.5}
+                              label={{ value: 'avg', fontSize: 9, fill: '#3b82f6', position: 'right' }}
                             />
                           )}
                           <Area
                             type="monotone"
                             dataKey="latency"
-                            stroke="#3b82f6"
+                            stroke="#22c55e"
                             strokeWidth={2}
                             fill={`url(#gradient-${agent.id}-${target.id})`}
-                            dot={false}
-                            activeDot={{ r: 4, fill: '#3b82f6' }}
+                            dot={chartData.length < 10 ? { r: 3, fill: '#22c55e' } : false}
+                            activeDot={{ r: 5, fill: '#22c55e', stroke: '#fff', strokeWidth: 2 }}
+                            connectNulls={true}
+                            isAnimationActive={false}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -293,7 +309,7 @@ const Dashboard = () => {
                       <div className="h-full flex items-center justify-center text-muted-foreground">
                         <div className="text-center">
                           <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">No data yet</p>
+                          <p className="text-sm">Waiting for data...</p>
                         </div>
                       </div>
                     )}
