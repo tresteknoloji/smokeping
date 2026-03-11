@@ -4,6 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Dark Theme (default) */
 :root {
   --background: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
@@ -37,6 +38,44 @@
   --status-danger: 0 84% 60%;
   --status-info: 217 91% 60%;
   --cyan-accent: 186 94% 42%;
+  
+  /* Theme specific */
+  --sidebar-bg: 222 47% 5%;
+  --card-bg: 222 47% 6%;
+  --glass-bg: rgba(15, 23, 42, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --background: 210 40% 98%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 217.2 91.2% 59.8%;
+  
+  --sidebar-bg: 0 0% 100%;
+  --card-bg: 0 0% 100%;
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] body {
+  background: hsl(210 40% 98%);
 }
 
 * {
@@ -116,15 +155,19 @@ h1, h2, h3, h4, h5, h6 {
 /* Glass effect */
 .glass {
   backdrop-filter: blur(12px);
-  background: rgba(15, 23, 42, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
 }
 
 .glass-card {
   backdrop-filter: blur(16px);
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .glass-card {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 /* Status indicators */

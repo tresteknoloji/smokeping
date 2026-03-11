@@ -21,8 +21,8 @@
 /* Sidebar */
 .sidebar {
   width: 280px;
-  background: rgba(15, 23, 42, 0.95);
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background: hsl(var(--sidebar-bg));
+  border-right: 1px solid hsl(var(--border));
   backdrop-filter: blur(12px);
 }
 
@@ -32,32 +32,32 @@
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
-  color: hsl(215 20.2% 65.1%);
+  color: hsl(var(--muted-foreground));
   transition: all 0.2s ease;
 }
 
 .sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: hsl(210 40% 98%);
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
 }
 
 .sidebar-link.active {
-  background: rgba(59, 130, 246, 0.15);
-  color: hsl(217.2 91.2% 59.8%);
-  border: 1px solid rgba(59, 130, 246, 0.3);
+  background: hsl(217.2 91.2% 59.8% / 0.15);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(217.2 91.2% 59.8% / 0.3);
 }
 
 /* Dashboard Cards */
 .stat-card {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 0.75rem;
   padding: 1.5rem;
   transition: all 0.2s ease;
 }
 
 .stat-card:hover {
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: hsl(var(--border));
   transform: translateY(-2px);
 }
 
@@ -70,14 +70,14 @@
 
 .stat-label {
   font-size: 0.875rem;
-  color: hsl(215 20.2% 65.1%);
+  color: hsl(var(--muted-foreground));
   margin-top: 0.5rem;
 }
 
 /* Graph Container */
 .graph-container {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 0.75rem;
   padding: 1.5rem;
 }
@@ -97,16 +97,16 @@
 
 /* Agent/Target Cards */
 .item-card {
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 0.5rem;
   padding: 1rem;
   transition: all 0.2s ease;
 }
 
 .item-card:hover {
-  background: rgba(15, 23, 42, 0.8);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: hsl(var(--accent));
+  border-color: hsl(var(--border));
 }
 
 /* Status Dot */
@@ -139,8 +139,8 @@
   display: flex;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: 0.5rem;
   margin-bottom: 0.5rem;
 }
@@ -191,23 +191,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, hsl(222.2 84% 4.9%) 0%, hsl(222.2 84% 8%) 100%);
+  background: hsl(var(--background));
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
   padding: 2.5rem;
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 1rem;
   backdrop-filter: blur(12px);
 }
 
 /* Public Page */
 .public-header {
-  background: rgba(15, 23, 42, 0.95);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: hsl(var(--sidebar-bg));
+  border-bottom: 1px solid hsl(var(--border));
   padding: 1rem 2rem;
   position: sticky;
   top: 0;
@@ -282,15 +282,15 @@
 
 /* Tooltip Custom */
 .custom-tooltip {
-  background: hsl(217.2 32.6% 12%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
   border-radius: 0.5rem !important;
   padding: 0.75rem 1rem !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
 }
 
 .custom-tooltip .label {
-  color: hsl(210 40% 98%);
+  color: hsl(var(--foreground));
   font-family: 'Inter', sans-serif;
   font-size: 0.875rem;
 }
