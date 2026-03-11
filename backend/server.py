@@ -470,7 +470,7 @@ fi
 echo "[1/5] Installing dependencies..."
 apt-get update -qq
 apt-get install -y -qq python3 python3-pip mtr-tiny > /dev/null 2>&1
-pip3 install -q websockets
+pip3 install -q websockets --break-system-packages 2>/dev/null || pip3 install -q websockets
 
 echo "[2/5] Creating agent script..."
 cat > /opt/smokeping_agent.py << 'AGENT_EOF'
