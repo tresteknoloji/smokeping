@@ -50,7 +50,7 @@ const Login = () => {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center mb-4 glow-primary">
             <Activity className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">SmokePing Modern</h1>
+          <h1 className="text-2xl font-bold text-white tracking-tight">NetPing</h1>
           <p className="text-slate-400 text-sm mt-1">Network Monitoring System</p>
         </div>
 

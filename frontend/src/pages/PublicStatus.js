@@ -386,7 +386,7 @@ const PublicStatus = () => {
       {/* Footer */}
       <footer className="max-w-7xl mx-auto p-4 md:p-8 border-t border-white/5">
         <div className="text-center text-sm text-muted-foreground">
-          <p>SmokePing Modern • Real-time Network Monitoring</p>
+          <p>NetPing • Real-time Network Monitoring</p>
         </div>
       </footer>
     </div>

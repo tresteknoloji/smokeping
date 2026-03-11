@@ -177,7 +177,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 <Activity className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-lg text-[hsl(var(--foreground))] tracking-tight">SmokePing</h1>
+                <h1 className="font-bold text-lg text-[hsl(var(--foreground))] tracking-tight">NetPing</h1>
                 <p className="text-xs text-[hsl(var(--muted-foreground))]">Network Monitor</p>
               </div>
             </div>
@@ -275,7 +275,7 @@ const MainLayout = ({ children }) => {
             </button>
             <div className="flex items-center gap-2">
               <Activity className="w-6 h-6 text-blue-500" />
-              <span className="font-bold text-[hsl(var(--foreground))]">SmokePing</span>
+              <span className="font-bold text-[hsl(var(--foreground))]">NetPing</span>
             </div>
             <div className="w-10" />
           </div>

@@ -32,7 +32,7 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 24
 
 # Create the main app
-app = FastAPI(title="SmokePing Modern API")
+app = FastAPI(title="NetPing API")
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
@@ -223,7 +223,7 @@ async def send_alert_email(alert: Alert):
         msg = MIMEMultipart()
         msg['From'] = smtp.get("smtp_from", smtp.get("smtp_user"))
         msg['To'] = ", ".join(smtp["alert_emails"])
-        msg['Subject'] = f"[SmokePing Alert] {alert.severity.upper()}: {alert.alert_type}"
+        msg['Subject'] = f"[NetPing Alert] {alert.severity.upper()}: {alert.alert_type}"
         
         body = f"""
 Alert Type: {alert.alert_type}
@@ -305,7 +305,7 @@ async def get_agent_script(agent_id: str, user: dict = Depends(get_current_user)
     
     script = f'''#!/usr/bin/env python3
 """
-SmokePing Modern Agent
+NetPing Modern Agent
 Agent ID: {agent_id}
 Agent Name: {agent["name"]}
 """
@@ -431,7 +431,7 @@ async def run_agent():
             await asyncio.sleep(10)
 
 if __name__ == "__main__":
-    print("SmokePing Modern Agent Starting...")
+    print("NetPing Modern Agent Starting...")
     print(f"Agent ID: {{AGENT_ID}}")
     asyncio.run(run_agent())
 '''
@@ -449,14 +449,14 @@ async def get_agent_install_script(agent_id: str, api_key: str = Query(...)):
     http_url = backend_url.replace('wss://', 'https://').replace('ws://', 'http://')
     
     install_script = f'''#!/bin/bash
-# SmokePing Modern Agent Installer
+# NetPing Modern Agent Installer
 # Agent: {agent["name"]}
 # Auto-generated install script
 
 set -e
 
 echo "=========================================="
-echo "  SmokePing Modern Agent Installer"
+echo "  NetPing Modern Agent Installer"
 echo "  Agent: {agent["name"]}"
 echo "=========================================="
 echo ""
@@ -476,7 +476,7 @@ echo "[2/5] Creating agent script..."
 cat > /opt/smokeping_agent.py << 'AGENT_EOF'
 #!/usr/bin/env python3
 """
-SmokePing Modern Agent
+NetPing Modern Agent
 Agent ID: {agent_id}
 Agent Name: {agent["name"]}
 """
@@ -552,7 +552,7 @@ async def run_agent():
             await asyncio.sleep(10)
 
 if __name__ == "__main__":
-    print("SmokePing Agent Starting...")
+    print("NetPing Agent Starting...")
     asyncio.run(run_agent())
 AGENT_EOF
 
@@ -561,7 +561,7 @@ chmod +x /opt/smokeping_agent.py
 echo "[3/5] Creating systemd service..."
 cat > /etc/systemd/system/smokeping-agent.service << 'SERVICE_EOF'
 [Unit]
-Description=SmokePing Modern Agent
+Description=NetPing Modern Agent
 After=network.target
 
 [Service]
@@ -1085,7 +1085,7 @@ async def websocket_frontend(websocket: WebSocket):
 # Root endpoint
 @api_router.get("/")
 async def root():
-    return {"message": "SmokePing Modern API", "version": "1.0.0"}
+    return {"message": "NetPing API", "version": "1.0.0"}
 
 # Include router
 app.include_router(api_router)
