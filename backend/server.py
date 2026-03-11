@@ -922,7 +922,7 @@ async def websocket_agent(
             # Wait for results
             try:
                 while True:
-                    message = await asyncio.wait_for(websocket.recv(), timeout=ping_interval)
+                    message = await asyncio.wait_for(websocket.receive_text(), timeout=ping_interval)
                     data = json.loads(message)
                     
                     if data.get("type") == "heartbeat":
