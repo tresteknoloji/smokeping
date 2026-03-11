@@ -390,20 +390,24 @@ async def run_agent():
                         if data.get("type") == "ping_targets":
                             targets = data.get("targets", [])
                             
-                            # Run all pings concurrently using asyncio.gather
-                            async def ping_and_send(target):
+                            # Run all pings concurrently
+                            async def do_ping(target):
                                 ping_result = await ping_host(target["hostname"])
+                                return {{"target": target, "result": ping_result}}
+                            
+                            results = await asyncio.gather(*[do_ping(t) for t in targets])
+                            
+                            # Send results sequentially (WebSocket not thread-safe)
+                            for item in results:
+                                target, ping_result = item["target"], item["result"]
                                 await websocket.send(json.dumps({{
                                     "type": "ping_result",
                                     "target_id": target["id"],
                                     "target_hostname": target["hostname"],
                                     **ping_result
                                 }}))
-                                return target
                             
-                            await asyncio.gather(*[ping_and_send(t) for t in targets])
-                            
-                            # MTR sequentially if needed (heavy operation)
+                            # MTR sequentially if needed
                             if data.get("include_mtr", False):
                                 for target in targets:
                                     hops = await mtr_host(target["hostname"])
@@ -415,7 +419,6 @@ async def run_agent():
                                     }}))
                         
                         elif data.get("type") == "instant_ping":
-                            # Handle instant ping request
                             request_id = data.get("request_id")
                             hostname = data.get("hostname")
                             ping_result = await ping_host(hostname)
@@ -426,7 +429,6 @@ async def run_agent():
                                 **ping_result
                             }}))
                     except asyncio.TimeoutError:
-                        # Send heartbeat
                         await websocket.send(json.dumps({{"type": "heartbeat"}}))
                     except websockets.exceptions.ConnectionClosed:
                         print(f"[{{datetime.now()}}] Connection closed, reconnecting...")
@@ -541,12 +543,15 @@ async def run_agent():
                         if data.get("type") == "ping_targets":
                             targets = data.get("targets", [])
                             # Run all pings concurrently
-                            async def ping_and_send(t):
+                            async def do_ping(t):
                                 r = await ping_host(t["hostname"])
+                                return {{"target": t, "result": r}}
+                            results = await asyncio.gather(*[do_ping(t) for t in targets])
+                            # Send results sequentially (WebSocket is not thread-safe)
+                            for item in results:
+                                t, r = item["target"], item["result"]
                                 await ws.send(json.dumps({{"type": "ping_result", "target_id": t["id"], "target_hostname": t["hostname"], **r}}))
-                                return t
-                            await asyncio.gather(*[ping_and_send(t) for t in targets])
-                            # MTR sequentially if needed (heavy operation)
+                            # MTR sequentially if needed
                             if data.get("include_mtr"):
                                 for t in targets:
                                     hops = await mtr_host(t["hostname"])
