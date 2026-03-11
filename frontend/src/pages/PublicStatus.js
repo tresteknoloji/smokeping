@@ -24,6 +24,8 @@ const PublicStatus = () => {
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [timeRange, setTimeRange] = useState("1");
   const [theme, setTheme] = useState(() => localStorage.getItem("public-theme") || "dark");
+  const [filterAgent, setFilterAgent] = useState("all");
+  const [filterTarget, setFilterTarget] = useState("all");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -151,9 +153,12 @@ const PublicStatus = () => {
   };
 
   // Generate combinations - sorted by TARGET first, then agent
+  // Apply filters
   const combinations = [];
   targets.forEach(target => {
+    if (filterTarget !== "all" && target.id !== filterTarget) return;
     agents.forEach(agent => {
+      if (filterAgent !== "all" && agent.id !== filterAgent) return;
       combinations.push({ agent, target });
     });
   });
@@ -172,7 +177,7 @@ const PublicStatus = () => {
     <div className="min-h-screen bg-[hsl(var(--background))]" data-testid="public-status-page">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[hsl(var(--sidebar-bg))] border-b border-[hsl(var(--border))] px-4 md:px-8 py-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
               <Activity className="w-6 h-6 text-white" />
@@ -184,17 +189,44 @@ const PublicStatus = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Agent Filter */}
+            <Select value={filterAgent} onValueChange={setFilterAgent}>
+              <SelectTrigger className="w-[140px]">
+                <Server className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Kaynak" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Kaynaklar</SelectItem>
+                {agents.map(agent => (
+                  <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Target Filter */}
+            <Select value={filterTarget} onValueChange={setFilterTarget}>
+              <SelectTrigger className="w-[140px]">
+                <Globe className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Hedef" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tüm Hedefler</SelectItem>
+                {targets.map(target => (
+                  <SelectItem key={target.id} value={target.id}>{target.name || target.hostname}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Time Range */}
             <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="w-[130px]">
                 <Clock className="w-4 h-4 mr-2" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">Last 1 hour</SelectItem>
-                <SelectItem value="6">Last 6 hours</SelectItem>
-                <SelectItem value="24">Last 24 hours</SelectItem>
-                <SelectItem value="72">Last 3 days</SelectItem>
+                <SelectItem value="1">Son 1 saat</SelectItem>
+                <SelectItem value="6">Son 6 saat</SelectItem>
+                <SelectItem value="24">Son 24 saat</SelectItem>
+                <SelectItem value="72">Son 3 gün</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -206,7 +238,7 @@ const PublicStatus = () => {
             </Button>
             <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
               <RefreshCw className="w-4 h-4" />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden sm:inline">Yenile</span>
             </Button>
           </div>
         </div>

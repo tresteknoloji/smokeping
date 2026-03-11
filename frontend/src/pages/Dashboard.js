@@ -22,6 +22,8 @@ const Dashboard = () => {
   const [pingResults, setPingResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState("1");
+  const [filterAgent, setFilterAgent] = useState("all");
+  const [filterTarget, setFilterTarget] = useState("all");
   const wsRef = useRef(null);
 
   const headers = { Authorization: `Bearer ${token}` };
@@ -157,13 +159,14 @@ const Dashboard = () => {
     return null;
   };
 
-  // Generate all agent-target combinations
+  // Generate all agent-target combinations with filters
   const combinations = [];
-  agents.forEach(agent => {
-    targets.forEach(target => {
-      if (target.enabled) {
-        combinations.push({ agent, target });
-      }
+  targets.forEach(target => {
+    if (!target.enabled) return;
+    if (filterTarget !== "all" && target.id !== filterTarget) return;
+    agents.forEach(agent => {
+      if (filterAgent !== "all" && agent.id !== filterAgent) return;
+      combinations.push({ agent, target });
     });
   });
 
@@ -185,23 +188,49 @@ const Dashboard = () => {
             {agents.filter(a => a.status === 'online').length}/{agents.length} agents online • {targets.length} targets
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Agent Filter */}
+          <Select value={filterAgent} onValueChange={setFilterAgent}>
+            <SelectTrigger className="w-[140px]" data-testid="agent-filter-select">
+              <Server className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Kaynak" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Kaynaklar</SelectItem>
+              {agents.map(agent => (
+                <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Target Filter */}
+          <Select value={filterTarget} onValueChange={setFilterTarget}>
+            <SelectTrigger className="w-[140px]" data-testid="target-filter-select">
+              <Globe className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="Hedef" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tüm Hedefler</SelectItem>
+              {targets.map(target => (
+                <SelectItem key={target.id} value={target.id}>{target.name || target.hostname}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* Time Range */}
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[130px]" data-testid="time-range-select">
               <Clock className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">Last 1 hour</SelectItem>
-              <SelectItem value="6">Last 6 hours</SelectItem>
-              <SelectItem value="24">Last 24 hours</SelectItem>
-              <SelectItem value="72">Last 3 days</SelectItem>
-              <SelectItem value="168">Last 7 days</SelectItem>
+              <SelectItem value="1">Son 1 saat</SelectItem>
+              <SelectItem value="6">Son 6 saat</SelectItem>
+              <SelectItem value="24">Son 24 saat</SelectItem>
+              <SelectItem value="72">Son 3 gün</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={fetchData} variant="outline" className="gap-2" data-testid="refresh-btn">
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            Yenile
           </Button>
         </div>
       </div>
