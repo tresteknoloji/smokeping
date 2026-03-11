@@ -211,7 +211,7 @@ const PublicStatus = () => {
       <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
         {/* Graphs Grid */}
         {combinations.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {combinations.map(({ agent, target }) => {
               const chartData = getChartData(agent.id, target.id);
               const stats = getStats(agent.id, target.id);
@@ -222,35 +222,30 @@ const PublicStatus = () => {
                   key={`${agent.id}-${target.id}`} 
                   className="glass-card"
                 >
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-1 pt-3 px-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
                           <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
-                          <span className="font-medium text-foreground">{agent.name}</span>
-                          <span className="text-muted-foreground">→</span>
-                          <span className="text-cyan-500 font-medium">{target.name || target.hostname}</span>
+                          <span className="font-medium text-sm text-foreground">{agent.name}</span>
+                          <span className="text-muted-foreground text-xs">→</span>
+                          <span className="text-cyan-500 font-medium text-sm">{target.name || target.hostname}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground font-mono">{target.hostname}</p>
+                        <p className="text-[10px] text-muted-foreground font-mono">{target.hostname}</p>
                       </div>
                       {stats.current !== null && (
                         <div className="text-right">
-                          <p className="text-2xl font-mono font-bold text-foreground">
+                          <p className="text-lg font-mono font-bold text-foreground">
                             {stats.current}
-                            <span className="text-sm text-muted-foreground ml-1">ms</span>
+                            <span className="text-xs text-muted-foreground ml-0.5">ms</span>
                           </p>
-                          {stats.loss > 0 && (
-                            <Badge variant="destructive" className="text-xs">
-                              {stats.loss}% loss
-                            </Badge>
-                          )}
                         </div>
                       )}
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="px-3 pb-3">
                     {/* Chart */}
-                    <div className="h-[200px] mb-4">
+                    <div className="h-[120px] mb-3">
                       {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
@@ -318,29 +313,29 @@ const PublicStatus = () => {
                     </div>
                     
                     {/* Stats Legend */}
-                    <div className="grid grid-cols-4 gap-2 pt-3 border-t border-border">
+                    <div className="grid grid-cols-4 gap-1 pt-2 border-t border-border">
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Min</p>
-                        <p className="text-sm font-mono font-semibold text-green-500">
-                          {stats.min !== null ? `${stats.min}ms` : '--'}
+                        <p className="text-[9px] text-muted-foreground uppercase">Min</p>
+                        <p className="text-xs font-mono font-semibold text-green-500">
+                          {stats.min !== null ? `${stats.min}` : '--'}
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Avg</p>
-                        <p className="text-sm font-mono font-semibold text-blue-500">
-                          {stats.avg !== null ? `${stats.avg}ms` : '--'}
+                        <p className="text-[9px] text-muted-foreground uppercase">Avg</p>
+                        <p className="text-xs font-mono font-semibold text-blue-500">
+                          {stats.avg !== null ? `${stats.avg}` : '--'}
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">95th</p>
-                        <p className="text-sm font-mono font-semibold text-yellow-500">
-                          {stats.p95 !== null ? `${stats.p95}ms` : '--'}
+                        <p className="text-[9px] text-muted-foreground uppercase">95th</p>
+                        <p className="text-xs font-mono font-semibold text-yellow-500">
+                          {stats.p95 !== null ? `${stats.p95}` : '--'}
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Max</p>
-                        <p className="text-sm font-mono font-semibold text-red-500">
-                          {stats.max !== null ? `${stats.max}ms` : '--'}
+                        <p className="text-[9px] text-muted-foreground uppercase">Max</p>
+                        <p className="text-xs font-mono font-semibold text-red-500">
+                          {stats.max !== null ? `${stats.max}` : '--'}
                         </p>
                       </div>
                     </div>
