@@ -301,7 +301,7 @@ async def get_agent_script(agent_id: str, user: dict = Depends(get_current_user)
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     
-    backend_url = os.environ.get('BACKEND_WS_URL', 'wss://ping-metrics-pro.preview.emergentagent.com')
+    backend_url = os.environ.get('BACKEND_WS_URL', 'wss://YOUR-DOMAIN.com')
     
     script = f'''#!/usr/bin/env python3
 """
