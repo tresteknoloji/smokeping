@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { useAuth, API } from "@/App";
+import { useAuth, API, BACKEND_URL } from "@/App";
 import axios from "axios";
 import { toast } from "sonner";
 import {
   Server, Plus, Trash2, Copy, Check, Download, Eye, 
-  Wifi, WifiOff, Clock, X
+  Wifi, WifiOff, Clock, X, Terminal
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Agents = () => {
   const { token } = useAuth();
@@ -42,6 +42,7 @@ const Agents = () => {
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [agentScript, setAgentScript] = useState("");
   const [copied, setCopied] = useState(false);
+  const [copiedInstall, setCopiedInstall] = useState(false);
   
   const [formData, setFormData] = useState({
     name: "",
@@ -110,15 +111,24 @@ const Agents = () => {
     }
   };
 
-  const copyToClipboard = async (text) => {
+  const copyToClipboard = async (text, isInstall = false) => {
     try {
       await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (isInstall) {
+        setCopiedInstall(true);
+        setTimeout(() => setCopiedInstall(false), 2000);
+      } else {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
       toast.success("Copied to clipboard");
     } catch (error) {
       toast.error("Failed to copy");
     }
+  };
+
+  const getInstallCommand = (agent) => {
+    return `curl -sSL "${BACKEND_URL}/api/agents/${agent.id}/install.sh?api_key=${agent.api_key}" | sudo bash`;
   };
 
   const downloadScript = () => {
@@ -299,58 +309,102 @@ const Agents = () => {
 
       {/* Script Dialog */}
       <Dialog open={showScriptDialog} onOpenChange={setShowScriptDialog}>
-        <DialogContent className="bg-card border-border max-w-3xl max-h-[80vh]">
+        <DialogContent className="bg-card border-border max-w-3xl max-h-[85vh]">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Agent Script - {selectedAgent?.name}</DialogTitle>
+            <DialogTitle className="text-foreground">Install Agent - {selectedAgent?.name}</DialogTitle>
             <DialogDescription className="text-muted-foreground">
-              Run this script on your Ubuntu server to start collecting metrics.
+              Choose your preferred installation method for Ubuntu/Debian servers.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-slate-900 rounded-lg border border-border">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-                <span className="text-sm text-muted-foreground font-mono">smokeping_agent.py</span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(agentScript)}
-                    className="gap-1.5"
-                    data-testid="copy-script-btn"
-                  >
-                    {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                    {copied ? 'Copied' : 'Copy'}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={downloadScript}
-                    className="gap-1.5"
-                    data-testid="download-script-btn"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download
-                  </Button>
-                </div>
-              </div>
-              <ScrollArea className="h-[400px]">
-                <pre className="p-4 text-sm font-mono text-muted-foreground whitespace-pre-wrap">
-                  {agentScript}
-                </pre>
-              </ScrollArea>
-            </div>
+          
+          <Tabs defaultValue="quick" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="quick">Quick Install (Recommended)</TabsTrigger>
+              <TabsTrigger value="manual">Manual Install</TabsTrigger>
+            </TabsList>
             
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
-              <h4 className="font-medium text-blue-400 mb-2">Installation Instructions</h4>
-              <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                <li>Install dependencies: <code className="bg-slate-800 px-1.5 py-0.5 rounded">pip install websockets</code></li>
-                <li>Save the script to your server</li>
-                <li>Install mtr: <code className="bg-slate-800 px-1.5 py-0.5 rounded">sudo apt install mtr-tiny</code></li>
-                <li>Run: <code className="bg-slate-800 px-1.5 py-0.5 rounded">python3 smokeping_agent.py</code></li>
-                <li>For background: <code className="bg-slate-800 px-1.5 py-0.5 rounded">nohup python3 smokeping_agent.py &</code></li>
-              </ol>
-            </div>
-          </div>
+            <TabsContent value="quick" className="space-y-4 mt-4">
+              <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Terminal className="w-5 h-5 text-green-400" />
+                  <h4 className="font-medium text-green-400">One-Line Install</h4>
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Run this command on your Ubuntu server as root:
+                </p>
+                <div className="bg-black/50 rounded-lg p-3 font-mono text-sm break-all">
+                  <code className="text-green-300">
+                    {selectedAgent && getInstallCommand(selectedAgent)}
+                  </code>
+                </div>
+                <Button
+                  onClick={() => copyToClipboard(getInstallCommand(selectedAgent), true)}
+                  className="mt-3 gap-2 bg-green-600 hover:bg-green-700"
+                  data-testid="copy-install-btn"
+                >
+                  {copiedInstall ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copiedInstall ? 'Copied!' : 'Copy Command'}
+                </Button>
+              </div>
+              
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p className="font-medium">This script will automatically:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Install Python3, pip, and mtr</li>
+                  <li>Install websockets library</li>
+                  <li>Create the agent script at /opt/smokeping_agent.py</li>
+                  <li>Create and enable systemd service</li>
+                  <li>Start the agent immediately</li>
+                </ul>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="manual" className="space-y-4 mt-4">
+              <div className="bg-secondary rounded-lg border border-border">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground font-mono">smokeping_agent.py</span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyToClipboard(agentScript)}
+                      className="gap-1.5"
+                      data-testid="copy-script-btn"
+                    >
+                      {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                      {copied ? 'Copied' : 'Copy'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={downloadScript}
+                      className="gap-1.5"
+                      data-testid="download-script-btn"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </Button>
+                  </div>
+                </div>
+                <ScrollArea className="h-[300px]">
+                  <pre className="p-4 text-sm font-mono text-muted-foreground whitespace-pre-wrap">
+                    {agentScript}
+                  </pre>
+                </ScrollArea>
+              </div>
+              
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                <h4 className="font-medium text-blue-400 mb-2">Manual Installation Steps</h4>
+                <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                  <li>Install dependencies: <code className="bg-secondary px-1.5 py-0.5 rounded">sudo apt install python3 python3-pip mtr-tiny</code></li>
+                  <li>Install websockets: <code className="bg-secondary px-1.5 py-0.5 rounded">pip3 install websockets</code></li>
+                  <li>Save the script to: <code className="bg-secondary px-1.5 py-0.5 rounded">/opt/smokeping_agent.py</code></li>
+                  <li>Run: <code className="bg-secondary px-1.5 py-0.5 rounded">python3 /opt/smokeping_agent.py</code></li>
+                </ol>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowScriptDialog(false)}>
               Close

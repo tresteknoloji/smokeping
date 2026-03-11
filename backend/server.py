@@ -437,6 +437,173 @@ if __name__ == "__main__":
 '''
     return {"script": script, "agent_id": agent_id, "api_key": agent["api_key"]}
 
+# One-liner install script (no auth required - uses agent's api_key for security)
+@api_router.get("/agents/{agent_id}/install.sh")
+async def get_agent_install_script(agent_id: str, api_key: str = Query(...)):
+    """Get one-liner install script for agent"""
+    agent = await db.agents.find_one({"id": agent_id, "api_key": api_key}, {"_id": 0})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found or invalid API key")
+    
+    backend_url = os.environ.get('BACKEND_WS_URL', 'wss://YOUR-DOMAIN.com')
+    http_url = backend_url.replace('wss://', 'https://').replace('ws://', 'http://')
+    
+    install_script = f'''#!/bin/bash
+# SmokePing Modern Agent Installer
+# Agent: {agent["name"]}
+# Auto-generated install script
+
+set -e
+
+echo "=========================================="
+echo "  SmokePing Modern Agent Installer"
+echo "  Agent: {agent["name"]}"
+echo "=========================================="
+echo ""
+
+# Check if running as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root (sudo)"
+    exit 1
+fi
+
+echo "[1/5] Installing dependencies..."
+apt-get update -qq
+apt-get install -y -qq python3 python3-pip mtr-tiny > /dev/null 2>&1
+pip3 install -q websockets
+
+echo "[2/5] Creating agent script..."
+cat > /opt/smokeping_agent.py << 'AGENT_EOF'
+#!/usr/bin/env python3
+"""
+SmokePing Modern Agent
+Agent ID: {agent_id}
+Agent Name: {agent["name"]}
+"""
+import asyncio
+import websockets
+import json
+import subprocess
+import re
+import platform
+from datetime import datetime
+
+AGENT_ID = "{agent_id}"
+API_KEY = "{agent["api_key"]}"
+WS_URL = "{backend_url}/api/ws/agent"
+
+async def ping_host(hostname, count=5):
+    try:
+        cmd = ["ping", "-c", str(count), "-W", "2", hostname]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        output = result.stdout + result.stderr
+        latency = None
+        match = re.search(r"rtt min/avg/max/mdev = [\\d.]+/([\\d.]+)/", output)
+        if match:
+            latency = float(match.group(1))
+        loss_match = re.search(r"(\\d+)% packet loss", output)
+        packet_loss = float(loss_match.group(1)) if loss_match else 0.0
+        status = "success" if latency is not None else "timeout"
+        return {{"latency_ms": latency, "packet_loss": packet_loss, "status": status}}
+    except subprocess.TimeoutExpired:
+        return {{"latency_ms": None, "packet_loss": 100.0, "status": "timeout"}}
+    except Exception as e:
+        return {{"latency_ms": None, "packet_loss": 100.0, "status": "error"}}
+
+async def mtr_host(hostname):
+    try:
+        cmd = ["mtr", "-r", "-c", "3", "-n", hostname]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        hops = []
+        for line in result.stdout.split("\\n"):
+            match = re.match(r"\\s*(\\d+)\\.\\|--\\s+([\\d.]+|\\?+)\\s+([\\d.]+)%\\s+\\d+\\s+([\\d.]+)?", line)
+            if match:
+                hops.append({{"hop": int(match.group(1)), "ip": match.group(2) if match.group(2) != "???" else None, "loss_percent": float(match.group(3)), "avg_ms": float(match.group(4)) if match.group(4) else None}})
+        return hops
+    except:
+        return []
+
+async def run_agent():
+    while True:
+        try:
+            uri = f"{{WS_URL}}?agent_id={{AGENT_ID}}&api_key={{API_KEY}}"
+            async with websockets.connect(uri) as ws:
+                print(f"[{{datetime.now()}}] Connected to server")
+                while True:
+                    try:
+                        msg = await asyncio.wait_for(ws.recv(), timeout=5)
+                        data = json.loads(msg)
+                        if data.get("type") == "ping_targets":
+                            for t in data.get("targets", []):
+                                r = await ping_host(t["hostname"])
+                                await ws.send(json.dumps({{"type": "ping_result", "target_id": t["id"], "target_hostname": t["hostname"], **r}}))
+                                if data.get("include_mtr"):
+                                    hops = await mtr_host(t["hostname"])
+                                    await ws.send(json.dumps({{"type": "mtr_result", "target_id": t["id"], "target_hostname": t["hostname"], "hops": hops}}))
+                        elif data.get("type") == "instant_ping":
+                            r = await ping_host(data["hostname"])
+                            await ws.send(json.dumps({{"type": "instant_ping_result", "request_id": data["request_id"], "hostname": data["hostname"], **r}}))
+                    except asyncio.TimeoutError:
+                        await ws.send(json.dumps({{"type": "heartbeat"}}))
+                    except websockets.exceptions.ConnectionClosed:
+                        break
+        except Exception as e:
+            print(f"[{{datetime.now()}}] Error: {{e}}, reconnecting...")
+            await asyncio.sleep(10)
+
+if __name__ == "__main__":
+    print("SmokePing Agent Starting...")
+    asyncio.run(run_agent())
+AGENT_EOF
+
+chmod +x /opt/smokeping_agent.py
+
+echo "[3/5] Creating systemd service..."
+cat > /etc/systemd/system/smokeping-agent.service << 'SERVICE_EOF'
+[Unit]
+Description=SmokePing Modern Agent
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/smokeping_agent.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+echo "[4/5] Enabling and starting service..."
+systemctl daemon-reload
+systemctl enable smokeping-agent > /dev/null 2>&1
+systemctl restart smokeping-agent
+
+echo "[5/5] Verifying..."
+sleep 2
+if systemctl is-active --quiet smokeping-agent; then
+    echo ""
+    echo "=========================================="
+    echo "  SUCCESS! Agent is running."
+    echo "=========================================="
+    echo ""
+    echo "Commands:"
+    echo "  Status:  systemctl status smokeping-agent"
+    echo "  Logs:    journalctl -u smokeping-agent -f"
+    echo "  Stop:    systemctl stop smokeping-agent"
+    echo "  Restart: systemctl restart smokeping-agent"
+    echo ""
+else
+    echo "ERROR: Agent failed to start"
+    systemctl status smokeping-agent
+    exit 1
+fi
+'''
+    
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse(content=install_script, media_type="text/plain")
+
+
 # ============ Target Routes ============
 @api_router.get("/targets", response_model=List[Dict])
 async def get_targets(user: dict = Depends(get_current_user)):
