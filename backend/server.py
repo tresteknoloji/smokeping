@@ -305,7 +305,7 @@ async def get_agent_script(agent_id: str, user: dict = Depends(get_current_user)
     
     script = f'''#!/usr/bin/env python3
 """
-NetPing Modern Agent
+NetPing Agent
 Agent ID: {agent_id}
 Agent Name: {agent["name"]}
 """
@@ -431,7 +431,7 @@ async def run_agent():
             await asyncio.sleep(10)
 
 if __name__ == "__main__":
-    print("NetPing Modern Agent Starting...")
+    print("NetPing Agent Starting...")
     print(f"Agent ID: {{AGENT_ID}}")
     asyncio.run(run_agent())
 '''
@@ -449,14 +449,14 @@ async def get_agent_install_script(agent_id: str, api_key: str = Query(...)):
     http_url = backend_url.replace('wss://', 'https://').replace('ws://', 'http://')
     
     install_script = f'''#!/bin/bash
-# NetPing Modern Agent Installer
+# NetPing Agent Installer
 # Agent: {agent["name"]}
 # Auto-generated install script
 
 set -e
 
 echo "=========================================="
-echo "  NetPing Modern Agent Installer"
+echo "  NetPing Agent Installer"
 echo "  Agent: {agent["name"]}"
 echo "=========================================="
 echo ""
@@ -476,7 +476,7 @@ echo "[2/5] Creating agent script..."
 cat > /opt/smokeping_agent.py << 'AGENT_EOF'
 #!/usr/bin/env python3
 """
-NetPing Modern Agent
+NetPing Agent
 Agent ID: {agent_id}
 Agent Name: {agent["name"]}
 """
@@ -561,7 +561,7 @@ chmod +x /opt/smokeping_agent.py
 echo "[3/5] Creating systemd service..."
 cat > /etc/systemd/system/smokeping-agent.service << 'SERVICE_EOF'
 [Unit]
-Description=NetPing Modern Agent
+Description=NetPing Agent
 After=network.target
 
 [Service]
