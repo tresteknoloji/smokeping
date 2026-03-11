@@ -75,23 +75,28 @@ const Dashboard = () => {
       const key = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
       
       if (!grouped[key]) {
-        grouped[key] = { time: key, values: [] };
+        grouped[key] = { time: key, values: [], timestamp: time.getTime() };
       }
       if (result.latency_ms !== null) {
         grouped[key].values.push(result.latency_ms);
+      }
+      // Keep the earliest timestamp for proper sorting
+      if (time.getTime() < grouped[key].timestamp) {
+        grouped[key].timestamp = time.getTime();
       }
     });
     
     return Object.values(grouped)
       .map(g => ({
         time: g.time,
+        timestamp: g.timestamp,
         latency: g.values.length > 0 
           ? Math.round(g.values.reduce((a, b) => a + b, 0) / g.values.length * 100) / 100
           : null,
         min: g.values.length > 0 ? Math.min(...g.values) : null,
         max: g.values.length > 0 ? Math.max(...g.values) : null
       }))
-      .sort((a, b) => a.time.localeCompare(b.time))
+      .sort((a, b) => a.timestamp - b.timestamp)
       .slice(-60);
   };
 
