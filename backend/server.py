@@ -408,6 +408,18 @@ async def run_agent():
                                         "target_hostname": target["hostname"],
                                         "hops": hops
                                     }}))
+                        
+                        elif data.get("type") == "instant_ping":
+                            # Handle instant ping request
+                            request_id = data.get("request_id")
+                            hostname = data.get("hostname")
+                            ping_result = await ping_host(hostname)
+                            await websocket.send(json.dumps({{
+                                "type": "instant_ping_result",
+                                "request_id": request_id,
+                                "hostname": hostname,
+                                **ping_result
+                            }}))
                     except asyncio.TimeoutError:
                         # Send heartbeat
                         await websocket.send(json.dumps({{"type": "heartbeat"}}))
@@ -589,6 +601,98 @@ async def get_public_alerts(limit: int = 50):
     alerts = await db.alerts.find({"resolved": False}, {"_id": 0}).sort("created_at", -1).to_list(limit)
     return alerts
 
+# ============ Instant Ping ============
+class InstantPingRequest(BaseModel):
+    hostname: str
+
+class InstantPingResult(BaseModel):
+    agent_id: str
+    agent_name: str
+    hostname: str
+    latency_ms: Optional[float] = None
+    packet_loss: float = 0.0
+    status: str = "pending"
+    timestamp: str = ""
+
+# Store for instant ping results
+instant_ping_results: Dict[str, Dict[str, InstantPingResult]] = {}
+
+@api_router.post("/instant-ping")
+async def instant_ping(request: InstantPingRequest, user: dict = Depends(get_current_user)):
+    """Send instant ping request to all online agents"""
+    hostname = request.hostname.strip()
+    if not hostname:
+        raise HTTPException(status_code=400, detail="Hostname is required")
+    
+    # Get all online agents
+    agents = await db.agents.find({"status": "online"}, {"_id": 0}).to_list(100)
+    
+    if not agents:
+        raise HTTPException(status_code=400, detail="No online agents available")
+    
+    # Create a unique request ID
+    request_id = str(uuid.uuid4())
+    instant_ping_results[request_id] = {}
+    
+    # Initialize results for all agents
+    for agent in agents:
+        instant_ping_results[request_id][agent["id"]] = InstantPingResult(
+            agent_id=agent["id"],
+            agent_name=agent["name"],
+            hostname=hostname,
+            status="pending"
+        )
+    
+    # Send ping command to all online agents via WebSocket
+    for agent in agents:
+        if agent["id"] in manager.active_connections:
+            try:
+                await manager.send_to_agent(agent["id"], {
+                    "type": "instant_ping",
+                    "request_id": request_id,
+                    "hostname": hostname
+                })
+            except Exception as e:
+                instant_ping_results[request_id][agent["id"]].status = "error"
+                logging.error(f"Failed to send instant ping to {agent['id']}: {e}")
+    
+    return {
+        "request_id": request_id,
+        "hostname": hostname,
+        "agents_count": len(agents),
+        "message": "Ping request sent to all online agents"
+    }
+
+@api_router.get("/instant-ping/{request_id}")
+async def get_instant_ping_results(request_id: str, user: dict = Depends(get_current_user)):
+    """Get results of an instant ping request"""
+    if request_id not in instant_ping_results:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    results = list(instant_ping_results[request_id].values())
+    
+    # Check if all results are complete
+    pending_count = sum(1 for r in results if r.status == "pending")
+    completed = pending_count == 0
+    
+    # Clean up old requests (keep for 5 minutes)
+    if completed:
+        # Schedule cleanup after returning
+        asyncio.create_task(cleanup_instant_ping(request_id))
+    
+    return {
+        "request_id": request_id,
+        "completed": completed,
+        "pending_count": pending_count,
+        "results": [r.model_dump() for r in results]
+    }
+
+async def cleanup_instant_ping(request_id: str):
+    """Clean up instant ping results after 5 minutes"""
+    await asyncio.sleep(300)
+    if request_id in instant_ping_results:
+        del instant_ping_results[request_id]
+
 # ============ Dashboard Stats ============
 @api_router.get("/dashboard/stats")
 async def get_dashboard_stats(user: dict = Depends(get_current_user)):
@@ -758,6 +862,21 @@ async def websocket_agent(
                             "type": "mtr_result",
                             "data": result.model_dump()
                         })
+                    
+                    elif data.get("type") == "instant_ping_result":
+                        # Handle instant ping result
+                        request_id = data.get("request_id")
+                        if request_id and request_id in instant_ping_results:
+                            if agent_id in instant_ping_results[request_id]:
+                                instant_ping_results[request_id][agent_id] = InstantPingResult(
+                                    agent_id=agent_id,
+                                    agent_name=agent.get("name", "Unknown"),
+                                    hostname=data.get("hostname", ""),
+                                    latency_ms=data.get("latency_ms"),
+                                    packet_loss=data.get("packet_loss", 0),
+                                    status=data.get("status", "success"),
+                                    timestamp=datetime.now(timezone.utc).isoformat()
+                                )
                         
             except asyncio.TimeoutError:
                 # Refresh targets periodically

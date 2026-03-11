@@ -7,7 +7,7 @@ import {
   Activity, Server, Globe, AlertTriangle, Settings, 
   LogOut, Menu, X, Plus, Trash2, Eye, Copy, Check,
   Wifi, WifiOff, Clock, TrendingUp, Bell, Shield,
-  ChevronRight, RefreshCw, Download, ExternalLink
+  ChevronRight, RefreshCw, Download, ExternalLink, Zap
 } from "lucide-react";
 
 // Pages
@@ -18,6 +18,7 @@ import Targets from "@/pages/Targets";
 import Alerts from "@/pages/Alerts";
 import SettingsPage from "@/pages/Settings";
 import PublicStatus from "@/pages/PublicStatus";
+import InstantPing from "@/pages/InstantPing";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -114,6 +115,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
 
   const links = [
     { path: "/dashboard", icon: Activity, label: "Dashboard" },
+    { path: "/instant-ping", icon: Zap, label: "Instant Ping" },
     { path: "/agents", icon: Server, label: "Agents" },
     { path: "/targets", icon: Globe, label: "Targets" },
     { path: "/alerts", icon: AlertTriangle, label: "Alerts" },
@@ -296,6 +298,16 @@ function App() {
               <ProtectedRoute>
                 <MainLayout>
                   <Alerts />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/instant-ping"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <InstantPing />
                 </MainLayout>
               </ProtectedRoute>
             }
