@@ -185,7 +185,7 @@ const PublicStatus = () => {
             <div>
               <h1 className="font-bold text-lg text-[hsl(var(--foreground))] tracking-tight">NetPing</h1>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                {onlineAgents}/{agents.length} agents • {targets.length} targets
+                Public Monitor
               </p>
             </div>
           </div>
