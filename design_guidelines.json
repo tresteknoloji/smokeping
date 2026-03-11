@@ -1,0 +1,184 @@
+{
+  "project_name": "SmokePing Modern",
+  "design_philosophy": {
+    "identity": "E1: The Anti-AI Designer",
+    "core_principles": [
+      "Fusion over Imitation: Cyber-Security meets Swiss Precision",
+      "Density is King: Network engineers need data, not whitespace",
+      "Dark Mode Default: Optimized for NOC (Network Operations Center) screens",
+      "Visual Feedback: Color = Status (Green is good, Red is panic)"
+    ],
+    "emotional_tone": "Professional, High-Tech, Reliable, Alert",
+    "theme_strategy": "Dark Mode Only"
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Chivo, sans-serif",
+      "body": "Inter, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl font-black tracking-tight",
+      "h2": "text-3xl font-bold tracking-tight",
+      "h3": "text-xl font-semibold tracking-normal",
+      "body": "text-sm md:text-base font-normal leading-relaxed",
+      "data": "text-xs md:text-sm font-mono tracking-wide"
+    },
+    "usage_rules": [
+      "Use 'JetBrains Mono' for ALL numeric data: IP addresses, Latency (ms), Packet Loss %, MTR Hops.",
+      "Use 'Chivo' for page titles and widget headers.",
+      "Use 'Inter' for UI labels, settings, and help text."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "background": {
+        "default": "#020617",
+        "surface": "#0F172A",
+        "surface_hover": "#1E293B"
+      },
+      "text": {
+        "primary": "#F8FAFC",
+        "secondary": "#94A3B8",
+        "muted": "#64748B"
+      },
+      "brand": {
+        "primary": "#3B82F6",
+        "accent": "#06B6D4"
+      },
+      "status": {
+        "success": "#10B981",
+        "warning": "#F59E0B",
+        "danger": "#EF4444",
+        "info": "#3B82F6"
+      }
+    },
+    "gradients": {
+      "cyber_glow": "linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)",
+      "danger_glow": "linear-gradient(135deg, #EF4444 0%, #B91C1C 100%)"
+    },
+    "accessibility": {
+      "rule": "Ensure APCA contrast compliance. Text on 'danger' backgrounds must be white or very dark shade."
+    }
+  },
+  "layout_system": {
+    "spacing": {
+      "base_unit": "4px",
+      "container_padding": "p-4 md:p-8",
+      "section_gap": "gap-6",
+      "widget_gap": "gap-4"
+    },
+    "grid_strategy": {
+      "dashboard_view": "Bento Grid: grid-cols-1 md:grid-cols-12 auto-rows-min",
+      "list_view": "High Density Table: w-full border-collapse"
+    },
+    "modes": {
+      "dashboard": [
+        "Hero Graph: col-span-12 md:col-span-8 row-span-2",
+        "Status Overview: col-span-12 md:col-span-4 row-span-1",
+        "Alert Feed: col-span-12 md:col-span-4 row-span-1",
+        "Agent Grid: col-span-12 row-span-auto"
+      ]
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 py-2 rounded-md font-medium transition-all shadow-[0_0_10px_rgba(59,130,246,0.5)]",
+      "destructive": "bg-destructive text-destructive-foreground hover:bg-destructive/90 h-9 px-4 py-2 rounded-md font-medium shadow-[0_0_10px_rgba(239,68,68,0.5)]",
+      "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 rounded-md"
+    },
+    "cards": {
+      "base": "rounded-lg border border-border bg-card text-card-foreground shadow-sm",
+      "glass": "backdrop-blur-xl bg-black/40 border-white/10 shadow-2xl"
+    },
+    "graphs": {
+      "library": "Recharts",
+      "style": {
+        "grid_stroke": "#334155",
+        "tooltip_bg": "#1E293B",
+        "tooltip_border": "#475569",
+        "line_stroke_width": 2,
+        "active_dot_r": 6
+      }
+    },
+    "tables": {
+      "style": "w-full caption-bottom text-sm",
+      "header": "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0",
+      "row": "border-b border-white/5 transition-colors hover:bg-white/5 data-[state=selected]:bg-muted",
+      "cell": "p-2 align-middle [&:has([role=checkbox])]:pr-0 font-mono"
+    },
+    "inputs": {
+      "base": "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+    }
+  },
+  "visual_enhancers": {
+    "borders": "1px solid rgba(255,255,255,0.1)",
+    "shadows": "0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)",
+    "glassmorphism": "backdrop-filter: blur(12px); background: rgba(15, 23, 42, 0.7);",
+    "animations": {
+      "pulse_slow": "animate-pulse duration-3000",
+      "ping_status": "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+    }
+  },
+  "assets": {
+    "images": [
+      {
+        "category": "background",
+        "url": "https://images.unsplash.com/photo-1734702496699-9cdda4d1dd01?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "description": "Abstract server rack lights, use for login page background or subtle overlay."
+      },
+      {
+        "category": "abstract_network",
+        "url": "https://images.unsplash.com/photo-1762278805026-9e0e673e5dc4?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "description": "Abstract streaks of purple/green light. Good for hero sections or empty states."
+      },
+      {
+        "category": "cyber_tech",
+        "url": "https://images.unsplash.com/photo-1759661881353-5b9cc55e1cf4?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "description": "Computer screen code. Use for 'Settings' or 'API' documentation visual."
+      },
+      {
+        "category": "nodes",
+        "url": "https://images.pexels.com/photos/17483870/pexels-photo-17483870.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Digital neural network. Use for 'Topology' or 'Route' visualization concepts."
+      }
+    ],
+    "icons": {
+      "library": "lucide-react",
+      "preferred": [
+        "Activity",
+        "Server",
+        "Wifi",
+        "AlertTriangle",
+        "ShieldCheck",
+        "Globe",
+        "Cpu"
+      ]
+    }
+  },
+  "accessibility": {
+    "contrast": "Ensure 4.5:1 for normal text. Use 'text-white' on colored badges.",
+    "focus_states": "Visible focus ring with 'ring-2 ring-primary' is mandatory for keyboard nav.",
+    "aria": "All graphs must have tabular data alternatives or 'aria-label' descriptions."
+  },
+  "instructions_to_main_agent": [
+    "1. THEME: Implement DARK MODE by default. Do not create a light mode toggle unless strictly necessary. The user asked for a 'dark theme, professional dashboard'.",
+    "2. LAYOUT: Use the 'Bento Grid' for the main dashboard. It should feel like a cockpit.",
+    "3. DATA: Use 'JetBrains Mono' for all IP addresses and Latency numbers. This is non-negotiable for a network tool.",
+    "4. GRAPHS: Use 'Recharts'. Style them to look like Grafana (dark background, neon lines, grid lines visible but subtle).",
+    "5. STATUS: Use the 'ping_status' animation on the dashboard for any agent that is 'DOWN'.",
+    "6. TESTING: Add 'data-testid' to every interactive element (buttons, inputs, grid rows).",
+    "7. TABLE: For the Agent List, use a dense table (compact padding) because users might have 20-50 servers.",
+    "8. NOTIFICATIONS: Use 'sonner' for toast notifications."
+  ],
+  "universal_guidelines": [
+    "Avoid 'AI Slop' (generic centered layouts, gradients everywhere).",
+    "Dark colors look good when used independently without gradients.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur).",
+    "Do NOT apply universal transition 'transition: all'.",
+    "Do NOT center align the app container.",
+    "Every interaction needs micro-animations (hover, focus).",
+    "Use 2-3x more spacing than feels comfortable for containers, but TIGHT spacing for data tables."
+  ]
+}
