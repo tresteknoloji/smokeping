@@ -1,40 +1,45 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 import {
-  Activity, Server, Globe, AlertTriangle, Wifi, WifiOff,
-  Clock, TrendingUp, RefreshCw, ExternalLink
+  Activity, Server, Globe, AlertTriangle, Clock, RefreshCw, Sun, Moon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Area, AreaChart
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine
 } from "recharts";
 
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const PublicStatus = () => {
-  const [data, setData] = useState({ agents: [], targets: [], latest_results: [] });
+  const [agents, setAgents] = useState([]);
+  const [targets, setTargets] = useState([]);
   const [pingResults, setPingResults] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  const [selectedAgent, setSelectedAgent] = useState("all");
-  const [selectedTarget, setSelectedTarget] = useState("all");
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [timeRange, setTimeRange] = useState("1");
+  const [theme, setTheme] = useState(() => localStorage.getItem("public-theme") || "dark");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("public-theme", theme);
+  }, [theme]);
 
   const fetchData = useCallback(async () => {
     try {
       const [statusRes, pingRes, alertsRes] = await Promise.all([
         axios.get(`${API}/public/status`),
-        axios.get(`${API}/public/ping-results?hours=24`),
+        axios.get(`${API}/public/ping-results?hours=${timeRange}`),
         axios.get(`${API}/public/alerts?limit=20`)
       ]);
       
-      setData(statusRes.data);
+      setAgents(statusRes.data.agents);
+      setTargets(statusRes.data.targets);
       setPingResults(pingRes.data);
       setAlerts(alertsRes.data);
       setLastUpdate(new Date());
@@ -43,117 +48,160 @@ const PublicStatus = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [timeRange]);
 
   useEffect(() => {
     fetchData();
-    
-    // Auto-refresh every 30 seconds
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Filter and process chart data
-  const getChartData = () => {
-    let filtered = pingResults;
+  // Get chart data for specific agent-target combination
+  const getChartData = (agentId, targetId) => {
+    const filtered = pingResults.filter(r => 
+      r.agent_id === agentId && r.target_id === targetId
+    );
     
-    if (selectedAgent !== "all") {
-      filtered = filtered.filter(r => r.agent_id === selectedAgent);
-    }
-    if (selectedTarget !== "all") {
-      filtered = filtered.filter(r => r.target_id === selectedTarget);
-    }
-    
-    // Group by timestamp
     const grouped = {};
     filtered.forEach(result => {
       const time = new Date(result.timestamp);
       const key = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
       
       if (!grouped[key]) {
-        grouped[key] = { time: key, latency: [], loss: [] };
+        grouped[key] = { time: key, values: [] };
       }
       if (result.latency_ms !== null) {
-        grouped[key].latency.push(result.latency_ms);
+        grouped[key].values.push(result.latency_ms);
       }
-      grouped[key].loss.push(result.packet_loss || 0);
     });
     
     return Object.values(grouped)
       .map(g => ({
         time: g.time,
-        latency: g.latency.length > 0 
-          ? Math.round(g.latency.reduce((a, b) => a + b, 0) / g.latency.length * 10) / 10 
+        latency: g.values.length > 0 
+          ? Math.round(g.values.reduce((a, b) => a + b, 0) / g.values.length * 100) / 100
           : null,
-        loss: g.loss.length > 0 
-          ? Math.round(g.loss.reduce((a, b) => a + b, 0) / g.loss.length * 10) / 10 
-          : 0
+        min: g.values.length > 0 ? Math.min(...g.values) : null,
+        max: g.values.length > 0 ? Math.max(...g.values) : null
       }))
-      .slice(-50)
-      .reverse();
+      .sort((a, b) => a.time.localeCompare(b.time))
+      .slice(-60);
   };
 
-  const chartData = getChartData();
+  // Calculate statistics
+  const getStats = (agentId, targetId) => {
+    const data = pingResults.filter(r => 
+      r.agent_id === agentId && r.target_id === targetId && r.latency_ms !== null
+    );
+    
+    if (data.length === 0) {
+      return { avg: null, min: null, max: null, p95: null, current: null, loss: 0 };
+    }
+    
+    const latencies = data.map(r => r.latency_ms).sort((a, b) => a - b);
+    const sum = latencies.reduce((a, b) => a + b, 0);
+    const avg = sum / latencies.length;
+    const p95Index = Math.floor(latencies.length * 0.95);
+    const p95 = latencies[p95Index] || latencies[latencies.length - 1];
+    
+    const totalResults = pingResults.filter(r => r.agent_id === agentId && r.target_id === targetId);
+    const lossCount = totalResults.filter(r => r.latency_ms === null || r.status !== 'success').length;
+    const loss = totalResults.length > 0 ? (lossCount / totalResults.length) * 100 : 0;
+    
+    return {
+      avg: Math.round(avg * 100) / 100,
+      min: Math.round(Math.min(...latencies) * 100) / 100,
+      max: Math.round(Math.max(...latencies) * 100) / 100,
+      p95: Math.round(p95 * 100) / 100,
+      current: Math.round(latencies[latencies.length - 1] * 100) / 100,
+      loss: Math.round(loss * 10) / 10
+    };
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
+      const data = payload[0].payload;
       return (
-        <div className="custom-tooltip">
-          <p className="label font-medium mb-1">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: <span className="value">{entry.value?.toFixed(1) || 'N/A'}</span>
-              {entry.name === 'Latency' ? 'ms' : '%'}
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+          <p className="text-sm font-medium text-foreground mb-2">{label}</p>
+          <div className="space-y-1 text-sm">
+            <p className="text-green-400">
+              Avg: <span className="font-mono font-bold">{data.latency?.toFixed(2) || 'N/A'}</span> ms
             </p>
-          ))}
+            {data.min !== null && (
+              <p className="text-emerald-400">
+                Min: <span className="font-mono">{data.min?.toFixed(2)}</span> ms
+              </p>
+            )}
+            {data.max !== null && (
+              <p className="text-red-400">
+                Max: <span className="font-mono">{data.max?.toFixed(2)}</span> ms
+              </p>
+            )}
+          </div>
         </div>
       );
     }
     return null;
   };
 
-  // Calculate stats
-  const onlineAgents = data.agents.filter(a => a.status === 'online').length;
-  const avgLatency = pingResults.length > 0 && pingResults.some(r => r.latency_ms)
-    ? Math.round(pingResults.filter(r => r.latency_ms).reduce((a, b) => a + b.latency_ms, 0) / pingResults.filter(r => r.latency_ms).length)
-    : null;
+  // Generate combinations
+  const combinations = [];
+  agents.forEach(agent => {
+    targets.forEach(target => {
+      combinations.push({ agent, target });
+    });
+  });
+
+  const onlineAgents = agents.filter(a => a.status === 'online').length;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-[hsl(var(--background))] flex items-center justify-center">
         <div className="spinner"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background" data-testid="public-status-page">
+    <div className="min-h-screen bg-[hsl(var(--background))]" data-testid="public-status-page">
       {/* Header */}
-      <header className="public-header">
+      <header className="sticky top-0 z-50 bg-[hsl(var(--sidebar-bg))] border-b border-[hsl(var(--border))] px-4 md:px-8 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-              <Activity className="w-6 h-6 text-foreground" />
+              <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-foreground tracking-tight">Network Status</h1>
-              <p className="text-xs text-muted-foreground">Public Monitoring Dashboard</p>
+              <h1 className="font-bold text-lg text-[hsl(var(--foreground))] tracking-tight">NetPing</h1>
+              <p className="text-xs text-[hsl(var(--muted-foreground))]">
+                {onlineAgents}/{agents.length} agents • {targets.length} targets
+              </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-muted-foreground flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Updated: {lastUpdate.toLocaleTimeString()}
-            </div>
+          <div className="flex items-center gap-3">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-[130px]">
+                <Clock className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">Last 1 hour</SelectItem>
+                <SelectItem value="6">Last 6 hours</SelectItem>
+                <SelectItem value="24">Last 24 hours</SelectItem>
+                <SelectItem value="72">Last 3 days</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
-              onClick={fetchData}
               variant="outline"
-              size="sm"
-              className="gap-2"
-              data-testid="refresh-public-btn"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </Button>
+            <Button onClick={fetchData} variant="outline" size="sm" className="gap-2">
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
         </div>
@@ -161,232 +209,195 @@ const PublicStatus = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="glass-card">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Agents Online</p>
-                  <p className="text-3xl font-mono font-bold text-foreground mt-1">
-                    {onlineAgents}/{data.agents.length}
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-blue-500/10">
-                  <Server className="w-6 h-6 text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Targets</p>
-                  <p className="text-3xl font-mono font-bold text-foreground mt-1">{data.targets.length}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-cyan-500/10">
-                  <Globe className="w-6 h-6 text-cyan-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Alerts</p>
-                  <p className={`text-3xl font-mono font-bold mt-1 ${alerts.length > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                    {alerts.length}
-                  </p>
-                </div>
-                <div className={`p-3 rounded-lg ${alerts.length > 0 ? 'bg-red-500/10' : 'bg-green-500/10'}`}>
-                  <AlertTriangle className={`w-6 h-6 ${alerts.length > 0 ? 'text-red-400' : 'text-green-400'}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="glass-card">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg Latency</p>
-                  <p className="text-3xl font-mono font-bold text-foreground mt-1">
-                    {avgLatency || '--'}
-                    <span className="text-lg text-muted-foreground">ms</span>
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-green-500/10">
-                  <TrendingUp className="w-6 h-6 text-green-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Chart */}
-        <Card className="glass-card">
-          <CardHeader className="pb-2">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <CardTitle className="text-lg font-semibold text-foreground">Latency (Last 24 Hours)</CardTitle>
-              <div className="flex gap-2">
-                <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-                  <SelectTrigger className="w-[150px] bg-secondary border-border">
-                    <SelectValue placeholder="All Agents" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Agents</SelectItem>
-                    {data.agents.map(agent => (
-                      <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={selectedTarget} onValueChange={setSelectedTarget}>
-                  <SelectTrigger className="w-[150px] bg-secondary border-border">
-                    <SelectValue placeholder="All Targets" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Targets</SelectItem>
-                    {data.targets.map(target => (
-                      <SelectItem key={target.id} value={target.id}>{target.name || target.hostname}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[350px]">
-              {chartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData}>
-                    <defs>
-                      <linearGradient id="latencyGradientPublic" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" strokeOpacity={0.5} />
-                    <XAxis 
-                      dataKey="time" 
-                      stroke="#64748b" 
-                      fontSize={12}
-                      tickLine={false}
-                    />
-                    <YAxis 
-                      stroke="#64748b" 
-                      fontSize={12}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(value) => `${value}ms`}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="latency"
-                      stroke="#3b82f6"
-                      strokeWidth={2}
-                      fill="url(#latencyGradientPublic)"
-                      name="Latency"
-                      dot={false}
-                      activeDot={{ r: 6, fill: '#3b82f6' }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <Activity className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No data available</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Bottom Grid */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Agents */}
-          <Card className="glass-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-foreground">Monitoring Agents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {data.agents.length > 0 ? (
-                  data.agents.map(agent => (
-                    <div key={agent.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`status-dot ${agent.status === 'online' ? 'online' : 'offline'}`} />
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{agent.name}</p>
-                          <p className="text-xs text-muted-foreground">{agent.description || 'No description'}</p>
+        {/* Graphs Grid */}
+        {combinations.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2">
+            {combinations.map(({ agent, target }) => {
+              const chartData = getChartData(agent.id, target.id);
+              const stats = getStats(agent.id, target.id);
+              const isOnline = agent.status === 'online';
+              
+              return (
+                <Card 
+                  key={`${agent.id}-${target.id}`} 
+                  className="glass-card"
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <span className="font-medium text-foreground">{agent.name}</span>
+                          <span className="text-muted-foreground">→</span>
+                          <span className="text-cyan-500 font-medium">{target.name || target.hostname}</span>
                         </div>
+                        <p className="text-xs text-muted-foreground font-mono">{target.hostname}</p>
                       </div>
-                      <Badge 
-                        variant={agent.status === 'online' ? 'default' : 'destructive'}
-                        className={agent.status === 'online' ? 'badge-success' : 'badge-danger'}
-                      >
-                        {agent.status}
-                      </Badge>
+                      {stats.current !== null && (
+                        <div className="text-right">
+                          <p className="text-2xl font-mono font-bold text-foreground">
+                            {stats.current}
+                            <span className="text-sm text-muted-foreground ml-1">ms</span>
+                          </p>
+                          {stats.loss > 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              {stats.loss}% loss
+                            </Badge>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Server className="w-10 h-10 mx-auto mb-2 opacity-50" />
-                    <p>No agents configured</p>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Active Alerts */}
-          <Card className="glass-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-foreground">Active Alerts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {alerts.length > 0 ? (
-                  alerts.slice(0, 5).map(alert => (
-                    <div key={alert.id} className={`alert-item ${alert.severity}`}>
-                      <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
-                        alert.severity === 'critical' ? 'text-red-400' :
-                        alert.severity === 'warning' ? 'text-yellow-400' : 'text-blue-400'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground truncate">{alert.message}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {alert.agent_name && `${alert.agent_name} • `}
-                          {new Date(alert.created_at).toLocaleTimeString()}
+                  </CardHeader>
+                  <CardContent>
+                    {/* Chart */}
+                    <div className="h-[200px] mb-4">
+                      {chartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                            <defs>
+                              <linearGradient id={`pub-gradient-${agent.id}-${target.id}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4}/>
+                                <stop offset="50%" stopColor="#22c55e" stopOpacity={0.15}/>
+                                <stop offset="100%" stopColor="#22c55e" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid 
+                              strokeDasharray="1 3" 
+                              stroke="hsl(var(--border))" 
+                              strokeOpacity={0.3}
+                              vertical={false}
+                            />
+                            <XAxis 
+                              dataKey="time" 
+                              stroke="hsl(var(--muted-foreground))" 
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              interval="preserveStartEnd"
+                              minTickGap={30}
+                            />
+                            <YAxis 
+                              stroke="hsl(var(--muted-foreground))" 
+                              fontSize={10}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={(v) => `${v}`}
+                              width={40}
+                              domain={['dataMin - 1', 'dataMax + 1']}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            {stats.avg && (
+                              <ReferenceLine 
+                                y={stats.avg} 
+                                stroke="#3b82f6" 
+                                strokeDasharray="4 4" 
+                                strokeOpacity={0.5}
+                              />
+                            )}
+                            <Area
+                              type="monotone"
+                              dataKey="latency"
+                              stroke="#22c55e"
+                              strokeWidth={2}
+                              fill={`url(#pub-gradient-${agent.id}-${target.id})`}
+                              dot={chartData.length < 10 ? { r: 3, fill: '#22c55e' } : false}
+                              activeDot={{ r: 5, fill: '#22c55e', stroke: '#fff', strokeWidth: 2 }}
+                              connectNulls={true}
+                              isAnimationActive={false}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-muted-foreground">
+                          <div className="text-center">
+                            <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">Waiting for data...</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Stats Legend */}
+                    <div className="grid grid-cols-4 gap-2 pt-3 border-t border-border">
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Min</p>
+                        <p className="text-sm font-mono font-semibold text-green-500">
+                          {stats.min !== null ? `${stats.min}ms` : '--'}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Avg</p>
+                        <p className="text-sm font-mono font-semibold text-blue-500">
+                          {stats.avg !== null ? `${stats.avg}ms` : '--'}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">95th</p>
+                        <p className="text-sm font-mono font-semibold text-yellow-500">
+                          {stats.p95 !== null ? `${stats.p95}ms` : '--'}
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Max</p>
+                        <p className="text-sm font-mono font-semibold text-red-500">
+                          {stats.max !== null ? `${stats.max}ms` : '--'}
                         </p>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <div className="flex items-center justify-center gap-2 text-green-400 mb-2">
-                      <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse" />
-                      All Systems Operational
-                    </div>
-                    <p className="text-sm">No active alerts</p>
-                  </div>
-                )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="glass-card">
+            <CardContent className="p-12">
+              <div className="text-center text-muted-foreground">
+                <Activity className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                <h3 className="text-xl font-semibold mb-2">No Monitoring Data</h3>
+                <p>Waiting for agents and targets to be configured.</p>
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
+
+        {/* Active Alerts */}
+        {alerts.length > 0 && (
+          <Card className="glass-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                Active Alerts
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {alerts.slice(0, 5).map(alert => (
+                  <div key={alert.id} className={`alert-item ${alert.severity}`}>
+                    <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
+                      alert.severity === 'critical' ? 'text-red-400' :
+                      alert.severity === 'warning' ? 'text-yellow-400' : 'text-blue-400'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">{alert.message}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {alert.agent_name && `${alert.agent_name} • `}
+                        {new Date(alert.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       {/* Footer */}
-      <footer className="max-w-7xl mx-auto p-4 md:p-8 border-t border-white/5">
-        <div className="text-center text-sm text-muted-foreground">
-          <p>NetPing • Real-time Network Monitoring</p>
+      <footer className="max-w-7xl mx-auto p-4 md:p-8 border-t border-[hsl(var(--border))]">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <p>NetPing Network Monitor</p>
+          <p>Last updated: {lastUpdate.toLocaleTimeString()}</p>
         </div>
       </footer>
     </div>
