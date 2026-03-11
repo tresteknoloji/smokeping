@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 class SmokePingAPITester:
-    def __init__(self, base_url="https://ping-metrics-pro.preview.emergentagent.com"):
+    def __init__(self, base_url="https://netping-debug.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
@@ -325,7 +325,7 @@ class SmokePingAPITester:
 def main():
     """Main test execution"""
     print("🚀 Starting SmokePing API Tests")
-    print(f"📡 Testing API: https://ping-metrics-pro.preview.emergentagent.com/api")
+    print(f"📡 Testing API: https://netping-debug.preview.emergentagent.com/api")
     
     tester = SmokePingAPITester()
     

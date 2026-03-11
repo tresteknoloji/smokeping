@@ -145,10 +145,10 @@ const PublicStatus = () => {
     return null;
   };
 
-  // Generate combinations
+  // Generate combinations - sorted by TARGET first, then agent
   const combinations = [];
-  agents.forEach(agent => {
-    targets.forEach(target => {
+  targets.forEach(target => {
+    agents.forEach(agent => {
       combinations.push({ agent, target });
     });
   });
@@ -209,9 +209,9 @@ const PublicStatus = () => {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
-        {/* Graphs Grid */}
+        {/* Graphs Grid - 3 columns on large screens */}
         {combinations.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {combinations.map(({ agent, target }) => {
               const chartData = getChartData(agent.id, target.id);
               const stats = getStats(agent.id, target.id);

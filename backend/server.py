@@ -321,7 +321,7 @@ AGENT_ID = "{agent_id}"
 API_KEY = "{agent["api_key"]}"
 WS_URL = "{backend_url}/api/ws/agent"
 
-async def ping_host(hostname, count=5):
+async def ping_host(hostname, count=2):
     """Execute ping command and parse results"""
     try:
         if platform.system() == "Windows":
@@ -329,7 +329,7 @@ async def ping_host(hostname, count=5):
         else:
             cmd = ["ping", "-c", str(count), "-W", "2", hostname]
         
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
         output = result.stdout + result.stderr
         
         # Parse latency
@@ -389,8 +389,9 @@ async def run_agent():
                         
                         if data.get("type") == "ping_targets":
                             targets = data.get("targets", [])
-                            for target in targets:
-                                # Ping
+                            
+                            # Run all pings concurrently using asyncio.gather
+                            async def ping_and_send(target):
                                 ping_result = await ping_host(target["hostname"])
                                 await websocket.send(json.dumps({{
                                     "type": "ping_result",
@@ -398,9 +399,13 @@ async def run_agent():
                                     "target_hostname": target["hostname"],
                                     **ping_result
                                 }}))
-                                
-                                # MTR (less frequent)
-                                if data.get("include_mtr", False):
+                                return target
+                            
+                            await asyncio.gather(*[ping_and_send(t) for t in targets])
+                            
+                            # MTR sequentially if needed (heavy operation)
+                            if data.get("include_mtr", False):
+                                for target in targets:
                                     hops = await mtr_host(target["hostname"])
                                     await websocket.send(json.dumps({{
                                         "type": "mtr_result",
@@ -492,10 +497,10 @@ AGENT_ID = "{agent_id}"
 API_KEY = "{agent["api_key"]}"
 WS_URL = "{backend_url}/api/ws/agent"
 
-async def ping_host(hostname, count=5):
+async def ping_host(hostname, count=2):
     try:
         cmd = ["ping", "-c", str(count), "-W", "2", hostname]
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
         output = result.stdout + result.stderr
         latency = None
         match = re.search(r"rtt min/avg/max/mdev = [\\d.]+/([\\d.]+)/", output)
@@ -534,10 +539,16 @@ async def run_agent():
                         msg = await asyncio.wait_for(ws.recv(), timeout=5)
                         data = json.loads(msg)
                         if data.get("type") == "ping_targets":
-                            for t in data.get("targets", []):
+                            targets = data.get("targets", [])
+                            # Run all pings concurrently
+                            async def ping_and_send(t):
                                 r = await ping_host(t["hostname"])
                                 await ws.send(json.dumps({{"type": "ping_result", "target_id": t["id"], "target_hostname": t["hostname"], **r}}))
-                                if data.get("include_mtr"):
+                                return t
+                            await asyncio.gather(*[ping_and_send(t) for t in targets])
+                            # MTR sequentially if needed (heavy operation)
+                            if data.get("include_mtr"):
+                                for t in targets:
                                     hops = await mtr_host(t["hostname"])
                                     await ws.send(json.dumps({{"type": "mtr_result", "target_id": t["id"], "target_hostname": t["hostname"], "hops": hops}}))
                         elif data.get("type") == "instant_ping":
