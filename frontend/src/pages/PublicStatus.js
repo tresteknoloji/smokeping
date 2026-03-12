@@ -266,6 +266,8 @@ const PublicStatus = () => {
               const chartData = getChartData(agent.id, target.id);
               const stats = getStats(agent.id, target.id);
               const isOnline = agent.status === 'online';
+              const LATENCY_THRESHOLD = 100; // ms
+              const isHealthy = stats.current === null || stats.current < LATENCY_THRESHOLD;
               
               return (
                 <Card 
@@ -276,7 +278,7 @@ const PublicStatus = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
+                          <div className={`w-2 h-2 rounded-full ${isHealthy ? 'bg-green-500' : 'bg-red-500'}`} />
                           <span className="font-medium text-sm text-foreground">{agent.name}</span>
                           <span className="text-muted-foreground text-xs">→</span>
                           <span className="text-cyan-500 font-medium text-sm">{target.name || target.hostname}</span>
@@ -284,7 +286,7 @@ const PublicStatus = () => {
                       </div>
                       {stats.current !== null && (
                         <div className="text-right">
-                          <p className="text-lg font-mono font-bold text-foreground">
+                          <p className={`text-lg font-mono font-bold ${isHealthy ? 'text-foreground' : 'text-red-500'}`}>
                             {stats.current}
                             <span className="text-xs text-muted-foreground ml-0.5">ms</span>
                           </p>
