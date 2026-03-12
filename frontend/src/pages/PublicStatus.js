@@ -34,12 +34,14 @@ const PublicStatus = () => {
 
   const fetchData = useCallback(async () => {
     try {
+      console.log('Fetching data for timeRange:', timeRange);
       const [statusRes, pingRes, alertsRes] = await Promise.all([
         axios.get(`${API}/public/status`),
         axios.get(`${API}/public/ping-results?hours=${timeRange}`),
         axios.get(`${API}/public/alerts?limit=20`)
       ]);
       
+      console.log('Received ping results:', pingRes.data.length);
       setAgents(statusRes.data.agents);
       setTargets(statusRes.data.targets);
       setPingResults(pingRes.data);
@@ -54,24 +56,28 @@ const PublicStatus = () => {
 
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
+  
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [fetchData, timeRange]);
+  }, [fetchData]);
 
   // Get chart data for specific agent-target combination
   const getChartData = (agentId, targetId) => {
-    const filtered = pingResults.filter(r => 
-      r.agent_id === agentId && r.target_id === targetId
-    );
+    const filtered = pingResults
+      .filter(r => r.agent_id === agentId && r.target_id === targetId)
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Ensure sorted
     
     const grouped = {};
     filtered.forEach(result => {
       const time = new Date(result.timestamp);
       // Include date for multi-day ranges
-      const dateKey = `${time.getMonth()+1}/${time.getDate()}`;
+      const dateKey = `${(time.getMonth()+1).toString().padStart(2,'0')}/${time.getDate().toString().padStart(2,'0')}`;
       const timeKey = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
       const displayKey = parseInt(timeRange) > 24 ? `${dateKey} ${timeKey}` : timeKey;
-      const uniqueKey = `${time.getFullYear()}-${time.getMonth()}-${time.getDate()}-${timeKey}`;
+      const uniqueKey = time.getTime().toString().slice(0, -4); // Group by ~10 second intervals
       
       if (!grouped[uniqueKey]) {
         grouped[uniqueKey] = { time: displayKey, values: [], timestamp: time.getTime() };
@@ -82,7 +88,7 @@ const PublicStatus = () => {
     });
     
     // Limit data points based on time range
-    const maxPoints = parseInt(timeRange) > 24 ? 120 : 60;
+    const maxPoints = parseInt(timeRange) > 24 ? 150 : 80;
     
     return Object.values(grouped)
       .map(g => ({

@@ -30,12 +30,14 @@ const Dashboard = () => {
 
   const fetchData = useCallback(async () => {
     try {
+      console.log('Dashboard fetching for timeRange:', timeRange);
       const [agentsRes, targetsRes, pingRes] = await Promise.all([
         axios.get(`${API}/agents`, { headers }),
         axios.get(`${API}/targets`, { headers }),
         axios.get(`${API}/ping-results?hours=${timeRange}`, { headers })
       ]);
       
+      console.log('Dashboard received ping results:', pingRes.data.length);
       setAgents(agentsRes.data);
       setTargets(targetsRes.data);
       setPingResults(pingRes.data);
@@ -46,10 +48,13 @@ const Dashboard = () => {
     }
   }, [token, timeRange]);
 
+  // Fetch data when timeRange changes
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
     
-    // WebSocket connection for real-time updates
+  // WebSocket connection (only once)
+  useEffect(() => {
     const wsUrl = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
     const ws = new WebSocket(`${wsUrl}/api/ws/frontend`);
     
@@ -62,23 +67,23 @@ const Dashboard = () => {
     
     wsRef.current = ws;
     return () => ws?.close();
-  }, [fetchData, timeRange]);
+  }, []);
 
   // Get chart data for specific agent-target combination
   const getChartData = (agentId, targetId) => {
-    const filtered = pingResults.filter(r => 
-      r.agent_id === agentId && r.target_id === targetId
-    );
+    const filtered = pingResults
+      .filter(r => r.agent_id === agentId && r.target_id === targetId)
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Ensure sorted
     
-    // Group by time (minute resolution)
+    // Group by time intervals
     const grouped = {};
     filtered.forEach(result => {
       const time = new Date(result.timestamp);
       // Include date for multi-day ranges
-      const dateKey = `${time.getMonth()+1}/${time.getDate()}`;
+      const dateKey = `${(time.getMonth()+1).toString().padStart(2,'0')}/${time.getDate().toString().padStart(2,'0')}`;
       const timeKey = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
       const displayKey = parseInt(timeRange) > 24 ? `${dateKey} ${timeKey}` : timeKey;
-      const uniqueKey = `${time.getFullYear()}-${time.getMonth()}-${time.getDate()}-${timeKey}`;
+      const uniqueKey = time.getTime().toString().slice(0, -4); // Group by ~10 second intervals
       
       if (!grouped[uniqueKey]) {
         grouped[uniqueKey] = { time: displayKey, values: [], timestamp: time.getTime() };
@@ -89,7 +94,7 @@ const Dashboard = () => {
     });
     
     // Limit data points based on time range
-    const maxPoints = parseInt(timeRange) > 24 ? 120 : 60;
+    const maxPoints = parseInt(timeRange) > 24 ? 150 : 80;
     
     return Object.values(grouped)
       .map(g => ({
