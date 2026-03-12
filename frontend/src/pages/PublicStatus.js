@@ -67,19 +67,22 @@ const PublicStatus = () => {
     const grouped = {};
     filtered.forEach(result => {
       const time = new Date(result.timestamp);
-      const key = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+      // Include date for multi-day ranges
+      const dateKey = `${time.getMonth()+1}/${time.getDate()}`;
+      const timeKey = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+      const displayKey = parseInt(timeRange) > 24 ? `${dateKey} ${timeKey}` : timeKey;
+      const uniqueKey = `${time.getFullYear()}-${time.getMonth()}-${time.getDate()}-${timeKey}`;
       
-      if (!grouped[key]) {
-        grouped[key] = { time: key, values: [], timestamp: time.getTime() };
+      if (!grouped[uniqueKey]) {
+        grouped[uniqueKey] = { time: displayKey, values: [], timestamp: time.getTime() };
       }
       if (result.latency_ms !== null) {
-        grouped[key].values.push(result.latency_ms);
-      }
-      // Keep the earliest timestamp for proper sorting
-      if (time.getTime() < grouped[key].timestamp) {
-        grouped[key].timestamp = time.getTime();
+        grouped[uniqueKey].values.push(result.latency_ms);
       }
     });
+    
+    // Limit data points based on time range
+    const maxPoints = parseInt(timeRange) > 24 ? 120 : 60;
     
     return Object.values(grouped)
       .map(g => ({
@@ -88,11 +91,11 @@ const PublicStatus = () => {
         latency: g.values.length > 0 
           ? Math.round(g.values.reduce((a, b) => a + b, 0) / g.values.length * 100) / 100
           : null,
-        min: g.values.length > 0 ? Math.min(...g.values) : null,
-        max: g.values.length > 0 ? Math.max(...g.values) : null
+        min: g.values.length > 0 ? Math.round(Math.min(...g.values) * 100) / 100 : null,
+        max: g.values.length > 0 ? Math.round(Math.max(...g.values) * 100) / 100 : null
       }))
       .sort((a, b) => a.timestamp - b.timestamp)
-      .slice(-60);
+      .slice(-maxPoints);
   };
 
   // Calculate statistics
@@ -313,8 +316,8 @@ const PublicStatus = () => {
                               fontSize={10}
                               tickLine={false}
                               axisLine={false}
-                              tickFormatter={(v) => `${v}`}
-                              width={40}
+                              tickFormatter={(v) => v?.toFixed(2)}
+                              width={45}
                               domain={['dataMin - 1', 'dataMax + 1']}
                             />
                             <Tooltip content={<CustomTooltip />} />
