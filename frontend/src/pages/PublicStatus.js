@@ -119,6 +119,11 @@ const PublicStatus = () => {
       return { avg: null, min: null, max: null, p95: null, current: null, loss: 0 };
     }
     
+    // Sort by timestamp to get the latest value
+    const sortedByTime = [...data].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const latestValue = sortedByTime[sortedByTime.length - 1]?.latency_ms;
+    
+    // Sort by latency for statistics
     const latencies = data.map(r => r.latency_ms).sort((a, b) => a - b);
     const sum = latencies.reduce((a, b) => a + b, 0);
     const avg = sum / latencies.length;
@@ -134,7 +139,7 @@ const PublicStatus = () => {
       min: Math.round(Math.min(...latencies) * 100) / 100,
       max: Math.round(Math.max(...latencies) * 100) / 100,
       p95: Math.round(p95 * 100) / 100,
-      current: Math.round(latencies[latencies.length - 1] * 100) / 100,
+      current: latestValue ? Math.round(latestValue * 100) / 100 : null,
       loss: Math.round(loss * 10) / 10
     };
   };
