@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import {
-  Activity, Server, Globe, AlertTriangle, Clock, RefreshCw, Sun, Moon
+  Activity, Server, Globe, AlertTriangle, RefreshCw, Sun, Moon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine
+  ResponsiveContainer, ReferenceLine, Scatter, ComposedChart
 } from "recharts";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -22,7 +22,7 @@ const PublicStatus = () => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [timeRange, setTimeRange] = useState("1");
+  const [timeRange] = useState("2"); // Fixed 2 hours for public page
   const [theme, setTheme] = useState(() => localStorage.getItem("public-theme") || "dark");
   const [filterAgent, setFilterAgent] = useState("all");
   const [filterTarget, setFilterTarget] = useState("all");
@@ -68,27 +68,31 @@ const PublicStatus = () => {
   const getChartData = (agentId, targetId) => {
     const filtered = pingResults
       .filter(r => r.agent_id === agentId && r.target_id === targetId)
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Ensure sorted
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     const grouped = {};
     filtered.forEach(result => {
       const time = new Date(result.timestamp);
-      // Include date for multi-day ranges
-      const dateKey = `${(time.getMonth()+1).toString().padStart(2,'0')}/${time.getDate().toString().padStart(2,'0')}`;
       const timeKey = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-      const displayKey = parseInt(timeRange) > 24 ? `${dateKey} ${timeKey}` : timeKey;
-      const uniqueKey = time.getTime().toString().slice(0, -4); // Group by ~10 second intervals
+      const uniqueKey = time.getTime().toString().slice(0, -4);
       
       if (!grouped[uniqueKey]) {
-        grouped[uniqueKey] = { time: displayKey, values: [], timestamp: time.getTime() };
+        grouped[uniqueKey] = { 
+          time: timeKey, 
+          values: [], 
+          losses: [],
+          timestamp: time.getTime() 
+        };
       }
       if (result.latency_ms !== null) {
         grouped[uniqueKey].values.push(result.latency_ms);
       }
+      if (result.packet_loss !== undefined) {
+        grouped[uniqueKey].losses.push(result.packet_loss);
+      }
     });
     
-    // Limit data points based on time range
-    const maxPoints = parseInt(timeRange) > 24 ? 150 : 80;
+    const maxPoints = 100;
     
     return Object.values(grouped)
       .map(g => ({
@@ -98,7 +102,8 @@ const PublicStatus = () => {
           ? Math.round(g.values.reduce((a, b) => a + b, 0) / g.values.length * 100) / 100
           : null,
         min: g.values.length > 0 ? Math.round(Math.min(...g.values) * 100) / 100 : null,
-        max: g.values.length > 0 ? Math.round(Math.max(...g.values) * 100) / 100 : null
+        max: g.values.length > 0 ? Math.round(Math.max(...g.values) * 100) / 100 : null,
+        loss: g.losses.length > 0 ? Math.max(...g.losses) : 0
       }))
       .sort((a, b) => a.timestamp - b.timestamp)
       .slice(-maxPoints);
@@ -152,6 +157,11 @@ const PublicStatus = () => {
             {data.max !== null && (
               <p className="text-red-400">
                 Max: <span className="font-mono">{data.max?.toFixed(2)}</span> ms
+              </p>
+            )}
+            {data.loss > 0 && (
+              <p className="text-orange-500 font-bold">
+                Loss: <span className="font-mono">{data.loss}%</span>
               </p>
             )}
           </div>
@@ -225,19 +235,6 @@ const PublicStatus = () => {
                 ))}
               </SelectContent>
             </Select>
-            {/* Time Range */}
-            <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[130px]">
-                <Clock className="w-4 h-4 mr-2" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Son 1 saat</SelectItem>
-                <SelectItem value="6">Son 6 saat</SelectItem>
-                <SelectItem value="24">Son 24 saat</SelectItem>
-                <SelectItem value="72">Son 3 gün</SelectItem>
-              </SelectContent>
-            </Select>
             <Button
               variant="outline"
               size="icon"
@@ -293,7 +290,7 @@ const PublicStatus = () => {
                     <div className="h-[120px] mb-3">
                       {chartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                          <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
                             <defs>
                               <linearGradient id={`pub-gradient-${agent.id}-${target.id}`} x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor="#22c55e" stopOpacity={0.4}/>
@@ -340,18 +337,33 @@ const PublicStatus = () => {
                               stroke="#22c55e"
                               strokeWidth={2}
                               fill={`url(#pub-gradient-${agent.id}-${target.id})`}
-                              dot={chartData.length < 10 ? { r: 3, fill: '#22c55e' } : false}
+                              dot={(props) => {
+                                const { cx, cy, payload } = props;
+                                if (payload.loss > 0) {
+                                  return (
+                                    <circle 
+                                      cx={cx} 
+                                      cy={cy} 
+                                      r={5} 
+                                      fill="#ef4444" 
+                                      stroke="#fff" 
+                                      strokeWidth={2}
+                                    />
+                                  );
+                                }
+                                return null;
+                              }}
                               activeDot={{ r: 5, fill: '#22c55e', stroke: '#fff', strokeWidth: 2 }}
                               connectNulls={true}
                               isAnimationActive={false}
                             />
-                          </AreaChart>
+                          </ComposedChart>
                         </ResponsiveContainer>
                       ) : (
                         <div className="h-full flex items-center justify-center text-muted-foreground">
                           <div className="text-center">
                             <Activity className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p className="text-sm">Waiting for data...</p>
+                            <p className="text-sm">Veri bekleniyor...</p>
                           </div>
                         </div>
                       )}
