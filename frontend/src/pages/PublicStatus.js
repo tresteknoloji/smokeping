@@ -56,7 +56,7 @@ const PublicStatus = () => {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, timeRange]);
 
   // Get chart data for specific agent-target combination
   const getChartData = (agentId, targetId) => {

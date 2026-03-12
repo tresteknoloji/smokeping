@@ -62,7 +62,7 @@ const Dashboard = () => {
     
     wsRef.current = ws;
     return () => ws?.close();
-  }, [fetchData]);
+  }, [fetchData, timeRange]);
 
   // Get chart data for specific agent-target combination
   const getChartData = (agentId, targetId) => {
