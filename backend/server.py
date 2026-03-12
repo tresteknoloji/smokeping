@@ -489,18 +489,48 @@ cat > /opt/smokeping_agent.py << 'AGENT_EOF'
 NetPing Agent
 Agent ID: {agent_id}
 Agent Name: {agent["name"]}
+Auto-Update Enabled
 """
 import asyncio
 import websockets
 import json
 import subprocess
 import re
-import platform
+import hashlib
+import urllib.request
 from datetime import datetime
 
 AGENT_ID = "{agent_id}"
 API_KEY = "{agent["api_key"]}"
 WS_URL = "{backend_url}/api/ws/agent"
+HTTP_URL = "{http_url}"
+SCRIPT_PATH = "/opt/smokeping_agent.py"
+
+def get_local_script_hash():
+    try:
+        with open(SCRIPT_PATH, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()
+    except:
+        return None
+
+def check_for_updates():
+    try:
+        url = f"{{HTTP_URL}}/api/agents/{{AGENT_ID}}/script-hash?api_key={{API_KEY}}"
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            remote_hash = json.loads(resp.read().decode())["hash"]
+        local_hash = get_local_script_hash()
+        if local_hash and remote_hash and local_hash != remote_hash:
+            print(f"[{{datetime.now()}}] Update available, downloading...")
+            # Download new script
+            script_url = f"{{HTTP_URL}}/api/agents/{{AGENT_ID}}/script?api_key={{API_KEY}}"
+            with urllib.request.urlopen(script_url, timeout=30) as resp:
+                new_script = json.loads(resp.read().decode())["script"]
+            with open(SCRIPT_PATH, "w") as f:
+                f.write(new_script)
+            print(f"[{{datetime.now()}}] Update downloaded, restarting service...")
+            subprocess.run(["systemctl", "restart", "smokeping-agent"], timeout=10)
+    except Exception as e:
+        print(f"[{{datetime.now()}}] Update check failed: {{e}}")
 
 async def ping_host(hostname, count=2):
     try:
@@ -534,8 +564,15 @@ async def mtr_host(hostname):
         return []
 
 async def run_agent():
+    last_update_check = 0
     while True:
         try:
+            # Check for updates every 5 minutes
+            now = datetime.now().timestamp()
+            if now - last_update_check > 300:
+                check_for_updates()
+                last_update_check = now
+            
             uri = f"{{WS_URL}}?agent_id={{AGENT_ID}}&api_key={{API_KEY}}"
             async with websockets.connect(uri, ping_interval=20, ping_timeout=20) as ws:
                 print(f"[{{datetime.now()}}] Connected to server")
@@ -564,6 +601,9 @@ async def run_agent():
                         elif data.get("type") == "instant_ping":
                             r = await ping_host(data["hostname"])
                             await ws.send(json.dumps({{"type": "instant_ping_result", "request_id": data["request_id"], "hostname": data["hostname"], **r}}))
+                        elif data.get("type") == "update_agent":
+                            print(f"[{{datetime.now()}}] Server requested update")
+                            check_for_updates()
                     except asyncio.TimeoutError:
                         # No message received, send heartbeat
                         await ws.send(json.dumps({{"type": "heartbeat"}}))
@@ -625,6 +665,161 @@ fi
     
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse(content=install_script, media_type="text/plain")
+
+# Agent script hash endpoint for auto-updates
+@api_router.get("/agents/{agent_id}/script-hash")
+async def get_agent_script_hash(agent_id: str, api_key: str = Query(...)):
+    """Get hash of current agent script for update checking"""
+    agent = await db.agents.find_one({"id": agent_id, "api_key": api_key}, {"_id": 0})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found or invalid API key")
+    
+    # Get the script content and compute hash
+    script_data = await get_agent_script_content(agent_id, api_key)
+    import hashlib
+    script_hash = hashlib.md5(script_data["script"].encode()).hexdigest()
+    return {"hash": script_hash}
+
+# Agent script content endpoint for auto-updates
+@api_router.get("/agents/{agent_id}/script")
+async def get_agent_script_content(agent_id: str, api_key: str = Query(...)):
+    """Get raw agent script content"""
+    agent = await db.agents.find_one({"id": agent_id, "api_key": api_key}, {"_id": 0})
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found or invalid API key")
+    
+    backend_url = os.environ.get('BACKEND_WS_URL', 'wss://YOUR-DOMAIN.com')
+    http_url = backend_url.replace('wss://', 'https://').replace('ws://', 'http://')
+    
+    script = f'''#!/usr/bin/env python3
+"""
+NetPing Agent
+Agent ID: {agent_id}
+Agent Name: {agent["name"]}
+Auto-Update Enabled
+"""
+import asyncio
+import websockets
+import json
+import subprocess
+import re
+import hashlib
+import urllib.request
+from datetime import datetime
+
+AGENT_ID = "{agent_id}"
+API_KEY = "{agent["api_key"]}"
+WS_URL = "{backend_url}/api/ws/agent"
+HTTP_URL = "{http_url}"
+SCRIPT_PATH = "/opt/smokeping_agent.py"
+
+def get_local_script_hash():
+    try:
+        with open(SCRIPT_PATH, "rb") as f:
+            return hashlib.md5(f.read()).hexdigest()
+    except:
+        return None
+
+def check_for_updates():
+    try:
+        url = f"{{HTTP_URL}}/api/agents/{{AGENT_ID}}/script-hash?api_key={{API_KEY}}"
+        with urllib.request.urlopen(url, timeout=10) as resp:
+            remote_hash = json.loads(resp.read().decode())["hash"]
+        local_hash = get_local_script_hash()
+        if local_hash and remote_hash and local_hash != remote_hash:
+            print(f"[{{datetime.now()}}] Update available, downloading...")
+            script_url = f"{{HTTP_URL}}/api/agents/{{AGENT_ID}}/script?api_key={{API_KEY}}"
+            with urllib.request.urlopen(script_url, timeout=30) as resp:
+                new_script = json.loads(resp.read().decode())["script"]
+            with open(SCRIPT_PATH, "w") as f:
+                f.write(new_script)
+            print(f"[{{datetime.now()}}] Update downloaded, restarting service...")
+            subprocess.run(["systemctl", "restart", "smokeping-agent"], timeout=10)
+    except Exception as e:
+        print(f"[{{datetime.now()}}] Update check failed: {{e}}")
+
+async def ping_host(hostname, count=2):
+    try:
+        cmd = ["ping", "-c", str(count), "-W", "2", hostname]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        output = result.stdout + result.stderr
+        latency = None
+        match = re.search(r"rtt min/avg/max/mdev = [\\d.]+/([\\d.]+)/", output)
+        if match:
+            latency = float(match.group(1))
+        loss_match = re.search(r"(\\d+)% packet loss", output)
+        packet_loss = float(loss_match.group(1)) if loss_match else 0.0
+        status = "success" if latency is not None else "timeout"
+        return {{"latency_ms": latency, "packet_loss": packet_loss, "status": status}}
+    except subprocess.TimeoutExpired:
+        return {{"latency_ms": None, "packet_loss": 100.0, "status": "timeout"}}
+    except Exception as e:
+        return {{"latency_ms": None, "packet_loss": 100.0, "status": "error"}}
+
+async def mtr_host(hostname):
+    try:
+        cmd = ["mtr", "-r", "-c", "3", "-n", hostname]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        hops = []
+        for line in result.stdout.split("\\n"):
+            match = re.match(r"\\s*(\\d+)\\.\\|--\\s+([\\d.]+|\\?+)\\s+([\\d.]+)%\\s+\\d+\\s+([\\d.]+)?", line)
+            if match:
+                hops.append({{"hop": int(match.group(1)), "ip": match.group(2) if match.group(2) != "???" else None, "loss_percent": float(match.group(3)), "avg_ms": float(match.group(4)) if match.group(4) else None}})
+        return hops
+    except:
+        return []
+
+async def run_agent():
+    last_update_check = 0
+    while True:
+        try:
+            now = datetime.now().timestamp()
+            if now - last_update_check > 300:
+                check_for_updates()
+                last_update_check = now
+            
+            uri = f"{{WS_URL}}?agent_id={{AGENT_ID}}&api_key={{API_KEY}}"
+            async with websockets.connect(uri, ping_interval=20, ping_timeout=20) as ws:
+                print(f"[{{datetime.now()}}] Connected to server")
+                while True:
+                    try:
+                        msg = await asyncio.wait_for(ws.recv(), timeout=60)
+                        data = json.loads(msg)
+                        if data.get("type") == "ping_targets":
+                            targets = data.get("targets", [])
+                            print(f"[{{datetime.now()}}] Pinging {{len(targets)}} targets...")
+                            async def do_ping(t):
+                                r = await ping_host(t["hostname"])
+                                return {{"target": t, "result": r}}
+                            results = await asyncio.gather(*[do_ping(t) for t in targets])
+                            for item in results:
+                                t, r = item["target"], item["result"]
+                                await ws.send(json.dumps({{"type": "ping_result", "target_id": t["id"], "target_hostname": t["hostname"], **r}}))
+                            print(f"[{{datetime.now()}}] Sent {{len(results)}} results")
+                            if data.get("include_mtr"):
+                                for t in targets:
+                                    hops = await mtr_host(t["hostname"])
+                                    await ws.send(json.dumps({{"type": "mtr_result", "target_id": t["id"], "target_hostname": t["hostname"], "hops": hops}}))
+                        elif data.get("type") == "instant_ping":
+                            r = await ping_host(data["hostname"])
+                            await ws.send(json.dumps({{"type": "instant_ping_result", "request_id": data["request_id"], "hostname": data["hostname"], **r}}))
+                        elif data.get("type") == "update_agent":
+                            print(f"[{{datetime.now()}}] Server requested update")
+                            check_for_updates()
+                    except asyncio.TimeoutError:
+                        await ws.send(json.dumps({{"type": "heartbeat"}}))
+                    except websockets.exceptions.ConnectionClosed:
+                        print(f"[{{datetime.now()}}] Connection closed")
+                        break
+        except Exception as e:
+            print(f"[{{datetime.now()}}] Error: {{e}}, reconnecting in 5s...")
+            await asyncio.sleep(5)
+
+if __name__ == "__main__":
+    print("NetPing Agent Starting...")
+    asyncio.run(run_agent())
+'''
+    return {"script": script}
 
 
 # ============ Target Routes ============
