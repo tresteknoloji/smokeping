@@ -271,13 +271,12 @@ const PublicStatus = () => {
                   <CardHeader className="pb-1 pt-3 px-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="flex items-center gap-1.5 mb-0.5">
+                        <div className="flex items-center gap-1.5">
                           <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`} />
                           <span className="font-medium text-sm text-foreground">{agent.name}</span>
                           <span className="text-muted-foreground text-xs">→</span>
                           <span className="text-cyan-500 font-medium text-sm">{target.name || target.hostname}</span>
                         </div>
-                        <p className="text-[10px] text-muted-foreground font-mono">{target.hostname}</p>
                       </div>
                       {stats.current !== null && (
                         <div className="text-right">
