@@ -339,7 +339,8 @@ const PublicStatus = () => {
                               fill={`url(#pub-gradient-${agent.id}-${target.id})`}
                               dot={(props) => {
                                 const { cx, cy, payload } = props;
-                                if (payload.loss > 0) {
+                                // Only show red dot for actual packet loss > 0
+                                if (payload && payload.loss && payload.loss > 0) {
                                   return (
                                     <circle 
                                       cx={cx} 
