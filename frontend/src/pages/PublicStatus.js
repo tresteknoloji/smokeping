@@ -423,36 +423,43 @@ const PublicStatus = () => {
           </Card>
         )}
 
-        {/* Active Alerts */}
-        {alerts.length > 0 && (
-          <Card className="glass-card">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                Active Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {alerts.slice(0, 5).map(alert => (
-                  <div key={alert.id} className={`alert-item ${alert.severity}`}>
-                    <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
-                      alert.severity === 'critical' ? 'text-red-400' :
-                      alert.severity === 'warning' ? 'text-yellow-400' : 'text-blue-400'
-                    }`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">{alert.message}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {alert.agent_name && `${alert.agent_name} • `}
-                        {new Date(alert.created_at).toLocaleString()}
-                      </p>
+        {/* Active Alerts - Only show threshold and packet loss alerts */}
+        {(() => {
+          const filteredAlerts = alerts.filter(alert => 
+            alert.type === 'threshold' || 
+            alert.type === 'packet_loss' || 
+            alert.type === 'latency'
+          );
+          return filteredAlerts.length > 0 && (
+            <Card className="glass-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                  Aktif Uyarılar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {filteredAlerts.slice(0, 5).map(alert => (
+                    <div key={alert.id} className={`alert-item ${alert.severity}`}>
+                      <AlertTriangle className={`w-5 h-5 flex-shrink-0 ${
+                        alert.severity === 'critical' ? 'text-red-400' :
+                        alert.severity === 'warning' ? 'text-yellow-400' : 'text-blue-400'
+                      }`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{alert.message}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {alert.agent_name && `${alert.agent_name} • `}
+                          {new Date(alert.created_at).toLocaleString()}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })()}
       </main>
 
       {/* Footer */}
