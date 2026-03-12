@@ -752,15 +752,16 @@ async def update_settings(settings_data: Settings, user: dict = Depends(get_curr
 @api_router.get("/public/status")
 async def get_public_status():
     agents = await db.agents.find({}, {"_id": 0, "api_key": 0}).to_list(1000)
-    targets = await db.targets.find({"enabled": True}, {"_id": 0}).to_list(1000)
+    # Hide hostname (IP) from public - only show name
+    targets = await db.targets.find({"enabled": True}, {"_id": 0, "hostname": 0}).to_list(1000)
     
-    # Get latest ping results for each agent-target combination
+    # Get latest ping results for each agent-target combination (without hostname)
     results = []
     for agent in agents:
         for target in targets:
             latest = await db.ping_results.find_one(
                 {"agent_id": agent["id"], "target_id": target["id"]},
-                {"_id": 0},
+                {"_id": 0, "target_hostname": 0},
                 sort=[("timestamp", -1)]
             )
             if latest:
@@ -783,12 +784,14 @@ async def get_public_ping_results(
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
     query["timestamp"] = {"$gte": cutoff}
     
-    results = await db.ping_results.find(query, {"_id": 0}).sort("timestamp", 1).to_list(10000)
+    # Get results without exposing target_hostname (IP)
+    results = await db.ping_results.find(query, {"_id": 0, "target_hostname": 0}).sort("timestamp", 1).to_list(10000)
     return results
 
 @api_router.get("/public/alerts")
 async def get_public_alerts(limit: int = 50):
-    alerts = await db.alerts.find({"resolved": False}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    # Hide target_hostname from public alerts
+    alerts = await db.alerts.find({"resolved": False}, {"_id": 0, "target_hostname": 0}).sort("created_at", -1).to_list(limit)
     return alerts
 
 # ============ Instant Ping ============
