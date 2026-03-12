@@ -207,7 +207,9 @@ const PublicStatus = () => {
               <Activity className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="font-bold text-lg text-[hsl(var(--foreground))] tracking-tight">NetPing</h1>
+              <h1 className="font-bold text-lg text-[hsl(var(--foreground))] tracking-tight">
+                NetPing <span className="text-muted-foreground font-normal">- Netlen Latency Monitor</span>
+              </h1>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
                 Public Monitor
               </p>
