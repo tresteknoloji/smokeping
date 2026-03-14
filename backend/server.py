@@ -1110,8 +1110,14 @@ async def websocket_agent(
         await websocket.close(code=4001)
         return
     
-    # Get client IP
-    client_ip = websocket.client.host if websocket.client else None
+    # Get real client IP (handle Cloudflare and other proxies)
+    headers = dict(websocket.headers)
+    client_ip = (
+        headers.get("cf-connecting-ip") or  # Cloudflare
+        headers.get("x-real-ip") or  # Nginx
+        (headers.get("x-forwarded-for", "").split(",")[0].strip()) or  # Standard proxy
+        (websocket.client.host if websocket.client else None)
+    )
     await db.agents.update_one(
         {"id": agent_id},
         {"$set": {"ip_address": client_ip}}
