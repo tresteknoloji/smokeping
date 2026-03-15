@@ -968,7 +968,9 @@ async def get_public_status():
 async def get_public_ping_results(
     agent_id: Optional[str] = None,
     target_id: Optional[str] = None,
-    hours: int = 24
+    hours: Optional[int] = None,
+    from_date: Optional[str] = Query(None, alias="from"),
+    to_date: Optional[str] = Query(None, alias="to")
 ):
     query = {}
     if agent_id:
@@ -976,11 +978,16 @@ async def get_public_ping_results(
     if target_id:
         query["target_id"] = target_id
     
-    cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
-    query["timestamp"] = {"$gte": cutoff}
+    # Custom date range or hours-based
+    if from_date and to_date:
+        query["timestamp"] = {"$gte": from_date, "$lte": to_date}
+    else:
+        hours = hours or 24
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
+        query["timestamp"] = {"$gte": cutoff}
     
     # Get results without exposing target_hostname (IP)
-    results = await db.ping_results.find(query, {"_id": 0, "target_hostname": 0}).sort("timestamp", 1).to_list(10000)
+    results = await db.ping_results.find(query, {"_id": 0, "target_hostname": 0}).sort("timestamp", 1).to_list(50000)
     return results
 
 @api_router.get("/public/alerts")

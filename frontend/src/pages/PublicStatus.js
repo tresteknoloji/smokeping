@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import axios from "axios";
 import {
-  Activity, Server, Globe, AlertTriangle, RefreshCw, Sun, Moon
+  Activity, Server, Globe, AlertTriangle, RefreshCw, Sun, Moon, Clock, Calendar
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Scatter, ComposedChart
@@ -15,17 +18,56 @@ import {
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Time range presets
+const TIME_PRESETS = [
+  { label: "1 Saat", value: "1", hours: 1 },
+  { label: "3 Saat", value: "3", hours: 3 },
+  { label: "6 Saat", value: "6", hours: 6 },
+  { label: "12 Saat", value: "12", hours: 12 },
+  { label: "1 Gün", value: "24", hours: 24 },
+  { label: "3 Gün", value: "72", hours: 72 },
+  { label: "7 Gün", value: "168", hours: 168 },
+];
+
 const PublicStatus = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [agents, setAgents] = useState([]);
   const [targets, setTargets] = useState([]);
   const [pingResults, setPingResults] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [timeRange] = useState("2"); // Fixed 2 hours for public page
   const [theme, setTheme] = useState(() => localStorage.getItem("public-theme") || "dark");
   const [filterAgent, setFilterAgent] = useState("all");
   const [filterTarget, setFilterTarget] = useState("all");
+  const [showCustomRange, setShowCustomRange] = useState(false);
+  const [customFrom, setCustomFrom] = useState(null);
+  const [customTo, setCustomTo] = useState(null);
+  
+  // Get time range from URL or default to 2 hours
+  const timeRange = searchParams.get("range") || "2";
+  const customFromParam = searchParams.get("from");
+  const customToParam = searchParams.get("to");
+  
+  const setTimeRange = (value) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("range", value);
+    newParams.delete("from");
+    newParams.delete("to");
+    setSearchParams(newParams);
+    setShowCustomRange(false);
+  };
+  
+  const applyCustomRange = () => {
+    if (customFrom && customTo) {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set("range", "custom");
+      newParams.set("from", customFrom.toISOString());
+      newParams.set("to", customTo.toISOString());
+      setSearchParams(newParams);
+      setShowCustomRange(false);
+    }
+  };
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -34,14 +76,20 @@ const PublicStatus = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      console.log('Fetching data for timeRange:', timeRange);
+      let pingUrl = `${API}/public/ping-results`;
+      
+      if (timeRange === "custom" && customFromParam && customToParam) {
+        pingUrl += `?from=${customFromParam}&to=${customToParam}`;
+      } else {
+        pingUrl += `?hours=${timeRange}`;
+      }
+      
       const [statusRes, pingRes, alertsRes] = await Promise.all([
         axios.get(`${API}/public/status`),
-        axios.get(`${API}/public/ping-results?hours=${timeRange}`),
+        axios.get(pingUrl),
         axios.get(`${API}/public/alerts?limit=20`)
       ]);
       
-      console.log('Received ping results:', pingRes.data.length);
       setAgents(statusRes.data.agents);
       setTargets(statusRes.data.targets);
       setPingResults(pingRes.data);
@@ -52,7 +100,7 @@ const PublicStatus = () => {
     } finally {
       setLoading(false);
     }
-  }, [timeRange]);
+  }, [timeRange, customFromParam, customToParam]);
 
   useEffect(() => {
     fetchData();
@@ -253,6 +301,74 @@ const PublicStatus = () => {
               <RefreshCw className="w-4 h-4" />
               <span className="hidden sm:inline">Yenile</span>
             </Button>
+          </div>
+        </div>
+        
+        {/* Time Range Selector - Grafana Style */}
+        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[hsl(var(--border))] flex-wrap">
+          <Clock className="w-4 h-4 text-muted-foreground" />
+          <div className="flex flex-wrap gap-1">
+            {TIME_PRESETS.map(preset => (
+              <Button
+                key={preset.value}
+                variant={timeRange === preset.value ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => setTimeRange(preset.value)}
+              >
+                {preset.label}
+              </Button>
+            ))}
+            
+            {/* Custom Range Button */}
+            <Popover open={showCustomRange} onOpenChange={setShowCustomRange}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={timeRange === "custom" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 px-2 text-xs gap-1"
+                >
+                  <Calendar className="w-3 h-3" />
+                  {timeRange === "custom" && customFromParam && customToParam ? (
+                    <span>
+                      {new Date(customFromParam).toLocaleDateString('tr-TR')} - {new Date(customToParam).toLocaleDateString('tr-TR')}
+                    </span>
+                  ) : (
+                    "Özel Aralık"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4" align="end">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Başlangıç</label>
+                    <CalendarComponent
+                      mode="single"
+                      selected={customFrom}
+                      onSelect={setCustomFrom}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Bitiş</label>
+                    <CalendarComponent
+                      mode="single"
+                      selected={customTo}
+                      onSelect={setCustomTo}
+                      disabled={(date) => date > new Date() || (customFrom && date < customFrom)}
+                    />
+                  </div>
+                  <Button 
+                    onClick={applyCustomRange} 
+                    disabled={!customFrom || !customTo}
+                    className="w-full"
+                  >
+                    Uygula
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </header>
