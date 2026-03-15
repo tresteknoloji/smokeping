@@ -357,15 +357,15 @@ const PublicStatus = () => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-4" align="end">
-                <div className="space-y-4">
+                <div className="flex gap-6">
+                  {/* From Date */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Başlangıç Tarihi</label>
+                    <label className="text-sm font-medium">Başlangıç</label>
                     <CalendarComponent
                       mode="single"
                       selected={customFrom}
                       onSelect={(date) => {
                         if (date) {
-                          // Preserve existing time or set to 00:00
                           const newDate = new Date(date);
                           if (customFrom) {
                             newDate.setHours(customFrom.getHours(), customFrom.getMinutes());
@@ -393,8 +393,10 @@ const PublicStatus = () => {
                       />
                     </div>
                   </div>
+                  
+                  {/* To Date */}
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Bitiş Tarihi</label>
+                    <label className="text-sm font-medium">Bitiş</label>
                     <CalendarComponent
                       mode="single"
                       selected={customTo}
@@ -426,14 +428,15 @@ const PublicStatus = () => {
                       />
                     </div>
                   </div>
-                  <Button 
-                    onClick={applyCustomRange} 
-                    disabled={!customFrom || !customTo}
-                    className="w-full"
-                  >
-                    Uygula
-                  </Button>
                 </div>
+                
+                <Button 
+                  onClick={applyCustomRange} 
+                  disabled={!customFrom || !customTo}
+                  className="w-full mt-4"
+                >
+                  Uygula
+                </Button>
               </PopoverContent>
             </Popover>
           </div>
