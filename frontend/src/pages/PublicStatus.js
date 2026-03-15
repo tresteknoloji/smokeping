@@ -118,18 +118,36 @@ const PublicStatus = () => {
       .filter(r => r.agent_id === agentId && r.target_id === targetId)
       .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
+    if (filtered.length === 0) return [];
+    
+    // Determine grouping interval based on data span
+    const firstTime = new Date(filtered[0].timestamp).getTime();
+    const lastTime = new Date(filtered[filtered.length - 1].timestamp).getTime();
+    const spanHours = (lastTime - firstTime) / (1000 * 60 * 60);
+    
+    // Group interval: 1 min for <3h, 5 min for <12h, 15 min for <48h, 30 min for rest
+    let intervalMinutes = 1;
+    if (spanHours > 48) intervalMinutes = 30;
+    else if (spanHours > 12) intervalMinutes = 15;
+    else if (spanHours > 3) intervalMinutes = 5;
+    
     const grouped = {};
     filtered.forEach(result => {
       const time = new Date(result.timestamp);
-      const timeKey = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-      const uniqueKey = time.getTime().toString().slice(0, -4);
+      // Round to nearest interval
+      const roundedMinutes = Math.floor(time.getMinutes() / intervalMinutes) * intervalMinutes;
+      const groupTime = new Date(time);
+      groupTime.setMinutes(roundedMinutes, 0, 0);
+      
+      const uniqueKey = groupTime.getTime();
+      const timeKey = `${groupTime.getHours().toString().padStart(2, '0')}:${groupTime.getMinutes().toString().padStart(2, '0')}`;
       
       if (!grouped[uniqueKey]) {
         grouped[uniqueKey] = { 
           time: timeKey, 
           values: [], 
           losses: [],
-          timestamp: time.getTime() 
+          timestamp: uniqueKey 
         };
       }
       if (result.latency_ms !== null) {
@@ -140,7 +158,7 @@ const PublicStatus = () => {
       }
     });
     
-    const maxPoints = 100;
+    const maxPoints = 120;
     
     return Object.values(grouped)
       .map(g => ({
@@ -304,8 +322,8 @@ const PublicStatus = () => {
           </div>
         </div>
         
-        {/* Time Range Selector - Grafana Style */}
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[hsl(var(--border))] flex-wrap">
+        {/* Time Range Selector - Grafana Style - Right Aligned */}
+        <div className="flex items-center justify-end gap-2 mt-3 pt-3 border-t border-[hsl(var(--border))] flex-wrap">
           <Clock className="w-4 h-4 text-muted-foreground" />
           <div className="flex flex-wrap gap-1">
             {TIME_PRESETS.map(preset => (
@@ -331,7 +349,7 @@ const PublicStatus = () => {
                   <Calendar className="w-3 h-3" />
                   {timeRange === "custom" && customFromParam && customToParam ? (
                     <span>
-                      {new Date(customFromParam).toLocaleDateString('tr-TR')} - {new Date(customToParam).toLocaleDateString('tr-TR')}
+                      {new Date(customFromParam).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })} - {new Date(customToParam).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })}
                     </span>
                   ) : (
                     "Özel Aralık"
@@ -341,23 +359,72 @@ const PublicStatus = () => {
               <PopoverContent className="w-auto p-4" align="end">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Başlangıç</label>
+                    <label className="text-sm font-medium">Başlangıç Tarihi</label>
                     <CalendarComponent
                       mode="single"
                       selected={customFrom}
-                      onSelect={setCustomFrom}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Preserve existing time or set to 00:00
+                          const newDate = new Date(date);
+                          if (customFrom) {
+                            newDate.setHours(customFrom.getHours(), customFrom.getMinutes());
+                          } else {
+                            newDate.setHours(0, 0, 0, 0);
+                          }
+                          setCustomFrom(newDate);
+                        }
+                      }}
                       disabled={(date) => date > new Date()}
                       initialFocus
                     />
+                    <div className="flex gap-2 items-center">
+                      <label className="text-sm">Saat:</label>
+                      <input 
+                        type="time" 
+                        className="bg-background border border-border rounded px-2 py-1 text-sm"
+                        value={customFrom ? `${customFrom.getHours().toString().padStart(2,'0')}:${customFrom.getMinutes().toString().padStart(2,'0')}` : '00:00'}
+                        onChange={(e) => {
+                          const [hours, minutes] = e.target.value.split(':');
+                          const newDate = customFrom ? new Date(customFrom) : new Date();
+                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                          setCustomFrom(newDate);
+                        }}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Bitiş</label>
+                    <label className="text-sm font-medium">Bitiş Tarihi</label>
                     <CalendarComponent
                       mode="single"
                       selected={customTo}
-                      onSelect={setCustomTo}
+                      onSelect={(date) => {
+                        if (date) {
+                          const newDate = new Date(date);
+                          if (customTo) {
+                            newDate.setHours(customTo.getHours(), customTo.getMinutes());
+                          } else {
+                            newDate.setHours(23, 59, 59, 999);
+                          }
+                          setCustomTo(newDate);
+                        }
+                      }}
                       disabled={(date) => date > new Date() || (customFrom && date < customFrom)}
                     />
+                    <div className="flex gap-2 items-center">
+                      <label className="text-sm">Saat:</label>
+                      <input 
+                        type="time" 
+                        className="bg-background border border-border rounded px-2 py-1 text-sm"
+                        value={customTo ? `${customTo.getHours().toString().padStart(2,'0')}:${customTo.getMinutes().toString().padStart(2,'0')}` : '23:59'}
+                        onChange={(e) => {
+                          const [hours, minutes] = e.target.value.split(':');
+                          const newDate = customTo ? new Date(customTo) : new Date();
+                          newDate.setHours(parseInt(hours), parseInt(minutes));
+                          setCustomTo(newDate);
+                        }}
+                      />
+                    </div>
                   </div>
                   <Button 
                     onClick={applyCustomRange} 

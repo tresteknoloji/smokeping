@@ -73,28 +73,45 @@ const Dashboard = () => {
   const getChartData = (agentId, targetId) => {
     const filtered = pingResults
       .filter(r => r.agent_id === agentId && r.target_id === targetId)
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)); // Ensure sorted
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // Group by time intervals
+    if (filtered.length === 0) return [];
+    
+    // Determine grouping interval based on data span
+    const firstTime = new Date(filtered[0].timestamp).getTime();
+    const lastTime = new Date(filtered[filtered.length - 1].timestamp).getTime();
+    const spanHours = (lastTime - firstTime) / (1000 * 60 * 60);
+    
+    // Group interval: 1 min for <3h, 5 min for <12h, 15 min for <48h, 30 min for rest
+    let intervalMinutes = 1;
+    if (spanHours > 48) intervalMinutes = 30;
+    else if (spanHours > 12) intervalMinutes = 15;
+    else if (spanHours > 3) intervalMinutes = 5;
+    
     const grouped = {};
     filtered.forEach(result => {
       const time = new Date(result.timestamp);
-      // Include date for multi-day ranges
-      const dateKey = `${(time.getMonth()+1).toString().padStart(2,'0')}/${time.getDate().toString().padStart(2,'0')}`;
-      const timeKey = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-      const displayKey = parseInt(timeRange) > 24 ? `${dateKey} ${timeKey}` : timeKey;
-      const uniqueKey = time.getTime().toString().slice(0, -4); // Group by ~10 second intervals
+      // Round to nearest interval
+      const roundedMinutes = Math.floor(time.getMinutes() / intervalMinutes) * intervalMinutes;
+      const groupTime = new Date(time);
+      groupTime.setMinutes(roundedMinutes, 0, 0);
+      
+      const uniqueKey = groupTime.getTime();
+      const timeKey = `${groupTime.getHours().toString().padStart(2, '0')}:${groupTime.getMinutes().toString().padStart(2, '0')}`;
       
       if (!grouped[uniqueKey]) {
-        grouped[uniqueKey] = { time: displayKey, values: [], timestamp: time.getTime() };
+        grouped[uniqueKey] = { 
+          time: timeKey, 
+          values: [], 
+          timestamp: uniqueKey 
+        };
       }
       if (result.latency_ms !== null) {
         grouped[uniqueKey].values.push(result.latency_ms);
       }
     });
     
-    // Limit data points based on time range
-    const maxPoints = parseInt(timeRange) > 24 ? 150 : 80;
+    const maxPoints = 120;
     
     return Object.values(grouped)
       .map(g => ({
