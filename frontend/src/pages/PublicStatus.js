@@ -56,6 +56,8 @@ const PublicStatus = () => {
     newParams.delete("to");
     setSearchParams(newParams);
     setShowCustomRange(false);
+    // Force immediate data fetch
+    setLoading(true);
   };
   
   const applyCustomRange = () => {
@@ -66,6 +68,8 @@ const PublicStatus = () => {
       newParams.set("to", customTo.toISOString());
       setSearchParams(newParams);
       setShowCustomRange(false);
+      // Force immediate data fetch
+      setLoading(true);
     }
   };
 
@@ -76,12 +80,17 @@ const PublicStatus = () => {
 
   const fetchData = useCallback(async () => {
     try {
+      // Read current values from URL
+      const currentRange = searchParams.get("range") || "2";
+      const fromParam = searchParams.get("from");
+      const toParam = searchParams.get("to");
+      
       let pingUrl = `${API}/public/ping-results`;
       
-      if (timeRange === "custom" && customFromParam && customToParam) {
-        pingUrl += `?from=${customFromParam}&to=${customToParam}`;
+      if (currentRange === "custom" && fromParam && toParam) {
+        pingUrl += `?from=${fromParam}&to=${toParam}`;
       } else {
-        pingUrl += `?hours=${timeRange}`;
+        pingUrl += `?hours=${currentRange}`;
       }
       
       const [statusRes, pingRes, alertsRes] = await Promise.all([
@@ -100,17 +109,18 @@ const PublicStatus = () => {
     } finally {
       setLoading(false);
     }
-  }, [timeRange, customFromParam, customToParam]);
+  }, [searchParams]);
 
+  // Fetch data when search params change
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [searchParams]);
   
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, []);
 
   // Get chart data for specific agent-target combination
   const getChartData = (agentId, targetId) => {
