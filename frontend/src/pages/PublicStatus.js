@@ -278,19 +278,23 @@ const PublicStatus = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-[hsl(var(--sidebar-bg))] border-b border-[hsl(var(--border))] px-4 md:px-8 py-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-              <Activity className="w-6 h-6 text-white" />
-            </div>
+          <a 
+            href="https://www.netlen.com.tr" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
+            <img 
+              src="/netlen-logo.svg" 
+              alt="Netlen" 
+              className={`h-10 w-auto ${theme === 'dark' ? 'invert brightness-0 invert' : ''}`}
+            />
             <div>
-              <h1 className="font-bold text-lg text-[hsl(var(--foreground))] tracking-tight">
-                NetPing <span className="text-muted-foreground font-normal">- Netlen Latency Monitor</span>
-              </h1>
               <p className="text-xs text-[hsl(var(--muted-foreground))]">
-                Public Monitor
+                Latency Monitor
               </p>
             </div>
-          </div>
+          </a>
           <div className="flex items-center gap-2 flex-wrap">
             {/* Agent Filter */}
             <Select value={filterAgent} onValueChange={setFilterAgent}>
